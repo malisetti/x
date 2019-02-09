@@ -82,7 +82,7 @@ func selectItemsByIDs(db *sql.DB, ids []int) ([]*item, error) {
 }
 
 func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
-	valueArgs := make([]string, 0, len(items)*3)
+	var valueArgs []string
 
 	// id, title, url, deleted, dead, discussLink, added, domain
 	valueArgsTmpl := "(%d, \"%s\", \"%s\", %d, %d, \"%s\", %s, \"%s\")"
