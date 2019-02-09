@@ -41,16 +41,31 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	items, err := fetchTopStories(ctx, 30)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	_, err = insertOrReplaceItems(db, items)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	go func() {
+		fiveMinTicker := time.NewTicker(5 * time.Minute)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-fiveMinTicker.C:
+				eightHrsBack := time.Now().Add(-eightHrs)
+				err := deleteOlderItems(db, eightHrsBack.Unix())
+				if err != nil {
+					log.Println(err)
+				}
+				items, err := fetchTopStories(ctx, 30)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				_, err = insertOrReplaceItems(db, items)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+			}
+		}
+	}()
 
 	const headerXForwardedFor = "X-Forwarded-For"
 	const headerXRealIP = "X-Real-IP"
@@ -95,9 +110,6 @@ func main() {
 		log.Println(r.UserAgent())
 
 		eightHrsBack := time.Now().Add(-eightHrs)
-
-		log.Println(eightHrsBack.Unix())
-
 		items, err := selectItemsBefore(db, eightHrsBack.Unix())
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)

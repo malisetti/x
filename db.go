@@ -15,6 +15,13 @@ func setupTables(db *sql.DB) error {
 	return err
 }
 
+func deleteOlderItems(db *sql.DB, t int64) error {
+	stmt := `DELETE FROM items WHERE added < %d`
+	stmt = fmt.Sprintf(stmt, t)
+	_, err := db.Exec(stmt)
+	return err
+}
+
 func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
