@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="Description" content="Technology News from the past 8hrs.">
+
+  <title>8hrs | Tech, News</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;line-height:1.5;font-size:1em;margin:10px;-webkit-text-size-adjust:100%}
+    .list li {
+      padding: 3px
+    }
+    #footer-info li{
+      display: inline;
+    }
+    .domain{
+      color:burlywood;
+      font-weight:normal;
+    }
+    .discuss{
+      color: #888;
+      text-decoration: none;
+    }
+    .readable{
+      text-decoration: none;
+      border-bottom: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+      <h1>Tech News - Past 8hrs</h1>
+  </header>
+  
+  <main>
+      <ol class="list">
+          {{ range $id, $item := . }}
+          <li>
+            {{ if $item.Deleted }}
+              <del>
+            {{ else if $item.Dead }}
+              <s>
+            {{ end }}
+                {{ if eq $item.URL "" }}
+                <a class="readable" target="_blank" href="{{ $item.DiscussLink }}">{{ $item.Title }}</a>
+                {{ else }}
+                <a class="readable" target="_blank" href="{{ $item.URL }}">{{ $item.Title }} <span class="domain">({{ $item.Domain }})</span></a> 
+                {{ if ne $item.DiscussLink "" }}
+                <a class="readable" target="_blank" href="{{ $item.DiscussLink }}"><i class="discuss">discuss</i></a>
+                {{ end }}
+                {{ end }}
+            {{ if $item.Deleted }}
+              </del>
+            {{ else if $item.Dead }}
+              </s>
+            {{ end }}
+          </li>
+          {{ end }}
+        </ol>
+  </main>
+
+  <footer>
+    <ul id="footer-info">
+      <li><a href="https://twitter.com/seshnsesh" target="_blank">Contact</a></li>
+    </ul>
+  </footer>
+</body>
+
+</html>

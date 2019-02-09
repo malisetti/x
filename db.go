@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
+	stmt := `SELECT id, link, added FROM items WHERE added >= %d`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	return serializeRowsToItems(rows)
+}
+
 func selectItemsByIDs(db *sql.DB, ids []int) ([]*item, error) {
 	var idsStr []string
 	for _, id := range ids {
@@ -20,20 +32,7 @@ func selectItemsByIDs(db *sql.DB, ids []int) ([]*item, error) {
 		return nil, err
 	}
 
-	defer rows.Close()
-	var items []*item
-	for rows.Next() {
-		var it item
-		err := rows.Scan(&it.ID, &it.URL, &it.Added)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		items = append(items, &it)
-	}
-
-	return items, nil
+	return serializeRowsToItems(rows)
 }
 
 func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
@@ -52,4 +51,21 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 	stmt := fmt.Sprintf(`INSERT OR REPLACE INTO items (id, link, added) VALUES %s`, strings.Join(valueArgs, ","))
 
 	return db.Exec(stmt)
+}
+
+func serializeRowsToItems(rows *sql.Rows) ([]*item, error) {
+	defer rows.Close()
+	var items []*item
+	for rows.Next() {
+		var it item
+		err := rows.Scan(&it.ID, &it.URL, &it.Added)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		items = append(items, &it)
+	}
+
+	return items, nil
 }
