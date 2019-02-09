@@ -24,18 +24,34 @@ const (
 )
 
 func main() {
-	log.Println("hello world")
+	tmpl := template.New("index.html")
+	tmpl, err := tmpl.ParseFiles("./index.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	db, err := sql.Open("sqlite3", "./app.db")
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	store := sim.NewStore()
+	// Define a limit rate to 5 requests per minute.
+	rate, err := limiter.NewRateFromFormatted("5-M")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	err = setupTables(db)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	middleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -80,22 +96,6 @@ func main() {
 		}
 
 		return ra
-	}
-
-	store := sim.NewStore()
-	// Define a limit rate to 5 requests per minute.
-	rate, err := limiter.NewRateFromFormatted("5-M")
-	if err != nil {
-		panic(err)
-	}
-
-	middleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
-
-	tmpl := template.New("index.html")
-	tmpl, err = tmpl.ParseFiles("./index.html")
-	if err != nil {
-		log.Println(err)
-		return
 	}
 
 	http.Handle("/", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
