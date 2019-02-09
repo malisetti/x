@@ -39,6 +39,9 @@ func main() {
 	valueStrings := make([]string, 0, len(items))
 	valueArgs := make([]interface{}, 0, len(items)*3)
 	for _, it := range items {
+		if it.URL == "" {
+			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
+		}
 		valueStrings = append(valueStrings, "(?, ?, ?)")
 		valueArgs = append(valueArgs, it.ID)
 		valueArgs = append(valueArgs, it.URL)
