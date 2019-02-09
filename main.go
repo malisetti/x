@@ -36,20 +36,23 @@ func main() {
 		return
 	}
 
-	valueStrings := make([]string, 0, len(items))
-	valueArgs := make([]interface{}, 0, len(items)*3)
+	valueArgs := make([]string, 0, len(items)*3)
+	valueArgsTmpl := "(%d, \"%s\", %s)"
 	for _, it := range items {
 		if it.URL == "" {
 			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
 		}
-		valueStrings = append(valueStrings, "(?, ?, ?)")
-		valueArgs = append(valueArgs, it.ID)
-		valueArgs = append(valueArgs, it.URL)
 		now := time.Now().Unix()
-		valueArgs = append(valueArgs, now)
+		added := fmt.Sprintf("COALESCE((SELECT added FROM items WHERE id = %d), %d)", it.ID, now)
+
+		v := fmt.Sprintf(valueArgsTmpl, it.ID, it.URL, added)
+		valueArgs = append(valueArgs, v)
 	}
-	stmt := fmt.Sprintf("INSERT INTO items (id, link, added) VALUES %s", strings.Join(valueStrings, ","))
-	res, err := db.Exec(stmt, valueArgs...)
+	stmt := fmt.Sprintf(`INSERT OR REPLACE INTO items (id, link, added) VALUES %s`, strings.Join(valueArgs, ","))
+
+	log.Println(stmt)
+
+	res, err := db.Exec(stmt)
 	if err != nil {
 		log.Println(err)
 		return
