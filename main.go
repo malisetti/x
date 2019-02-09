@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -32,6 +33,10 @@ func main() {
 		log.Println(err)
 		return
 	}
+
+	items, err = selectItemsByIDs(db, []int{19113147, 19115964})
+	b, _ := json.MarshalIndent(items, "", "  ")
+	log.Println(string(b), err)
 
 	log.Println(res.RowsAffected())
 }

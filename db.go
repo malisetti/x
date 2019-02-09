@@ -3,9 +3,38 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 )
+
+func selectItemsByIDs(db *sql.DB, ids []int) ([]*item, error) {
+	var idsStr []string
+	for _, id := range ids {
+		idsStr = append(idsStr, fmt.Sprintf("%d", id))
+	}
+	stmt := `SELECT id, link, added FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `)`
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var items []*item
+	for rows.Next() {
+		var it item
+		err := rows.Scan(&it.ID, &it.URL, &it.Added)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		items = append(items, &it)
+	}
+
+	return items, nil
+}
 
 func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 	valueArgs := make([]string, 0, len(items)*3)

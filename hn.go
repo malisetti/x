@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 )
 
 const (
@@ -20,19 +21,40 @@ func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
 	if err != nil {
 		return nil, err
 	}
+	ids := make(chan int)
+	go func() {
+		defer close(ids)
+		for _, itID := range itemIds {
+			ids <- itID
+		}
+	}()
+
+	itemsCh := make(chan *item)
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for id := range ids {
+				item, err := fetchItem(ctx, id)
+				if err != nil {
+					log.Println(err) // warning
+					continue
+				}
+
+				itemsCh <- item
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(itemsCh)
+	}()
+
 	var items []*item
-	for _, itID := range itemIds {
-		if ctx.Err() != nil {
-			return nil, nil
-		}
-
-		item, err := fetchItem(ctx, itID)
-		if err != nil {
-			log.Println(err) // warning
-			continue
-		}
-
-		items = append(items, item)
+	for it := range itemsCh {
+		items = append(items, it)
 	}
 
 	return items, nil
