@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -25,9 +24,14 @@ const (
 )
 
 func main() {
-	fmt.Println("hello world")
+	log.Println("hello world")
 
 	db, err := sql.Open("sqlite3", "./app.db")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = setupTables(db)
 	if err != nil {
 		log.Println(err)
 		return
@@ -42,17 +46,11 @@ func main() {
 		log.Println(err)
 		return
 	}
-	res, err := insertOrReplaceItems(db, items)
+	_, err = insertOrReplaceItems(db, items)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
-	items, err = selectItemsByIDs(db, []int{19113147, 19115964})
-	b, _ := json.MarshalIndent(items, "", "  ")
-	log.Println(string(b), err)
-
-	log.Println(res.RowsAffected())
 
 	const headerXForwardedFor = "X-Forwarded-For"
 	const headerXRealIP = "X-Real-IP"

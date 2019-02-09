@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -14,6 +16,22 @@ const (
 	storyLinkURL  = "https://hacker-news.firebaseio.com/v0/item/%d.json"
 	hnPostLinkURL = "https://news.ycombinator.com/item?id=%d"
 )
+
+var r = strings.NewReplacer("http://", "", "https://", "", "www.", "", "www2.", "", "www3.", "")
+
+func urlToDomain(link string) (string, error) {
+	u, err := url.Parse(link)
+	if err != nil {
+		return "", err
+	}
+	parts := strings.Split(u.Hostname(), ".")
+	if len(parts) >= 2 {
+		domain := parts[len(parts)-2] + "." + parts[len(parts)-1]
+		return domain, nil
+	}
+
+	return r.Replace(u.Hostname()), nil
+}
 
 func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
 	// send items
