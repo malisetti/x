@@ -37,7 +37,7 @@
   
   <main>
       <ol class="list">
-          {{ range $id, $item := . }}
+          {{ range $item := . }}
           <li>
             {{ if $item.Deleted }}
               <del>

@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"sync"
+
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
@@ -22,6 +24,13 @@ import (
 const (
 	eightHrs = 8 * 60 * 60 * time.Second
 )
+
+type tempStore struct {
+	sync.RWMutex
+	currentTop30ItemIds []int
+}
+
+var tstore tempStore
 
 func main() {
 	tmpl := template.New("index.html")
@@ -57,6 +66,8 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	flow(ctx, db)
+
 	go func() {
 		fiveMinTicker := time.NewTicker(5 * time.Minute)
 		for {
@@ -64,21 +75,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-fiveMinTicker.C:
-				eightHrsBack := time.Now().Add(-eightHrs)
-				err := deleteOlderItems(db, eightHrsBack.Unix())
-				if err != nil {
-					log.Println(err)
-				}
-				items, err := fetchTopStories(ctx, 30)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				_, err = insertOrReplaceItems(db, items)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
+				flow(ctx, db)
 			}
 		}
 	}()
@@ -109,18 +106,28 @@ func main() {
 		log.Println(realIP(r))
 		log.Println(r.UserAgent())
 
+		var ids []int
+		func() {
+			tstore.RLock()
+			defer tstore.RUnlock()
+			ids = tstore.currentTop30ItemIds
+		}()
+
 		eightHrsBack := time.Now().Add(-eightHrs)
-		items, err := selectItemsBefore(db, eightHrsBack.Unix())
+		oIds, err := selectItemsIdsBefore(db, eightHrsBack.Unix())
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+		currentTopPlusEightHrs := append(ids, oIds...)
+
+		items, err := selectItemsByIDs(db, currentTopPlusEightHrs)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
 		}
 
-		data := make(map[int]*item)
-		for _, it := range items {
-			data[it.ID] = it
-		}
-		err = tmpl.Execute(w, data)
+		err = tmpl.Execute(w, items)
 		if err != nil {
 			log.Println(err)
 		}
@@ -129,4 +136,56 @@ func main() {
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", 8080)}
 
 	log.Println(srv.ListenAndServe())
+}
+
+func flow(ctx context.Context, db *sql.DB) {
+	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	ids, err := fetchTopHNStories(ctx, 30)
+	if err != nil {
+		log.Println(err)
+	} else {
+		func() {
+			tstore.Lock()
+			defer tstore.Unlock()
+			tstore.currentTop30ItemIds = ids
+		}()
+	}
+
+	items, err := fetchTopStories(tctx, 30)
+	if err != nil {
+		log.Println(err)
+	}
+
+	eightHrsBack := time.Now().Add(-eightHrs)
+
+	resultItems, err := selectItemsBefore(db, eightHrsBack.Unix())
+	if err != nil {
+		log.Println(err)
+	}
+	var olderItemsIDsNotInTop []int
+	for _, it := range resultItems {
+		there := false
+		for _, topIt := range items {
+			if it.ID == topIt.ID {
+				there = true
+				break
+			}
+		}
+		if !there {
+			olderItemsIDsNotInTop = append(olderItemsIDsNotInTop, it.ID)
+		}
+	}
+	if len(olderItemsIDsNotInTop) > 0 {
+		err = deleteItemsWith(db, olderItemsIDsNotInTop)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	_, err = insertOrReplaceItems(db, items)
+	if err != nil {
+		log.Println(err)
+	}
 }

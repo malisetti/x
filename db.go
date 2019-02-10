@@ -15,11 +15,48 @@ func setupTables(db *sql.DB) error {
 	return err
 }
 
+func deleteItemsWith(db *sql.DB, ids []int) error {
+	var idsStr []string
+	for _, id := range ids {
+		idsStr = append(idsStr, fmt.Sprintf("%d", id))
+	}
+
+	stmt := `DELETE FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `)`
+	stmt = fmt.Sprintf(stmt)
+	_, err := db.Exec(stmt)
+	return err
+}
+
 func deleteOlderItems(db *sql.DB, t int64) error {
 	stmt := `DELETE FROM items WHERE added < %d`
 	stmt = fmt.Sprintf(stmt, t)
 	_, err := db.Exec(stmt)
 	return err
+}
+
+func selectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
+	stmt := `SELECT id FROM items WHERE added >= %d`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		ids = append(ids, id)
+	}
+
+	return ids, nil
 }
 
 func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {

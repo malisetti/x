@@ -35,7 +35,7 @@ func urlToDomain(link string) (string, error) {
 
 func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
 	// send items
-	itemIds, err := fetchTopHNStories(ctx, topStoriesURL, limit)
+	itemIds, err := fetchTopHNStories(ctx, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func fetchItem(ctx context.Context, itemID int) (*item, error) {
 	return it, nil
 }
 
-func fetchTopHNStories(ctx context.Context, topStoriesURL string, limit int) ([]int, error) {
+func fetchTopHNStories(ctx context.Context, limit int) ([]int, error) {
 	req, err := http.NewRequest(http.MethodGet, topStoriesURL, nil)
 	if err != nil {
 		return nil, err
@@ -113,14 +113,14 @@ func fetchTopHNStories(ctx context.Context, topStoriesURL string, limit int) ([]
 	defer resp.Body.Close()
 
 	decoder := json.NewDecoder(resp.Body)
-	var items []int
-	err = decoder.Decode(&items)
+	var ids []int
+	err = decoder.Decode(&ids)
 	if err != nil {
 		return nil, err
 	}
-	if len(items) < limit {
-		limit = len(items)
+	if len(ids) < limit {
+		limit = len(ids)
 	}
 
-	return items[:limit], nil
+	return ids[:limit], nil
 }
