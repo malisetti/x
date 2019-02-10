@@ -199,6 +199,43 @@ func flow(ctx context.Context, db *sql.DB) {
 		}
 	}
 
+	eightHrsBack := time.Now().Add(-1 * eightHrs)
+	resultItems, err = selectItemsAfter(db, eightHrsBack.Unix())
+	if err != nil {
+		log.Println(err)
+	}
+	var olderItemsIDsInTop []int
+	for _, it := range resultItems {
+		there := false
+		for _, topIt := range items {
+			if it.ID == topIt.ID {
+				there = true
+				break
+			}
+		}
+		if there {
+			olderItemsIDsInTop = append(olderItemsIDsInTop, it.ID)
+		}
+	}
+
+	updatedItems, err := fetchHNStoriesOf(ctx, olderItemsIDsInTop)
+	if err != nil {
+		log.Println()
+	}
+
+	for _, updatedItem := range updatedItems {
+		there := false
+		for _, it := range items {
+			if it.ID == updatedItem.ID {
+				there = true
+				break
+			}
+		}
+		if !there {
+			items = append(items, updatedItem)
+		}
+	}
+
 	_, err = insertOrReplaceItems(db, items)
 	if err != nil {
 		log.Println(err)

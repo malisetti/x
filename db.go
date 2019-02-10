@@ -72,13 +72,20 @@ func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
 	var items []*item
 	for rows.Next() {
 		var it item
+		var dead, deleted int
 		err := rows.Scan(&it.ID, &it.Title,
-			&it.URL, &it.Deleted,
-			&it.Dead, &it.DiscussLink,
+			&it.URL, &deleted,
+			&dead, &it.DiscussLink,
 			&it.Added, &it.Domain)
 		if err != nil {
 			log.Println(err)
 			continue
+		}
+		if dead == 1 {
+			it.Dead = true
+		}
+		if deleted == 1 {
+			it.Deleted = true
 		}
 
 		items = append(items, &it)
@@ -100,13 +107,20 @@ func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
 	var items []*item
 	for rows.Next() {
 		var it item
+		var dead, deleted int
 		err := rows.Scan(&it.ID, &it.Title,
-			&it.URL, &it.Deleted,
-			&it.Dead, &it.DiscussLink,
+			&it.URL, &deleted,
+			&dead, &it.DiscussLink,
 			&it.Added, &it.Domain)
 		if err != nil {
 			log.Println(err)
 			continue
+		}
+		if dead == 1 {
+			it.Dead = true
+		}
+		if deleted == 1 {
+			it.Deleted = true
 		}
 
 		items = append(items, &it)
@@ -131,13 +145,20 @@ func selectItemsByIDs(db *sql.DB, ids []int) ([]*item, error) {
 	var items []*item
 	for rows.Next() {
 		var it item
+		var dead, deleted int
 		err := rows.Scan(&it.ID, &it.Title,
-			&it.URL, &it.Deleted,
-			&it.Dead, &it.DiscussLink,
+			&it.URL, &deleted,
+			&dead, &it.DiscussLink,
 			&it.Added, &it.Domain)
 		if err != nil {
 			log.Println(err)
 			continue
+		}
+		if dead == 1 {
+			it.Dead = true
+		}
+		if deleted == 1 {
+			it.Deleted = true
 		}
 
 		items = append(items, &it)
