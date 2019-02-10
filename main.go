@@ -50,6 +50,8 @@ func main() {
 		return
 	}
 
+	defer db.Close()
+
 	store := sim.NewStore()
 	// Define a limit rate to 5 requests per minute.
 	rate, err := limiter.NewRateFromFormatted("5-M")
