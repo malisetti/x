@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"os"
 
 	"net"
 	"net/http"
@@ -22,7 +23,7 @@ import (
 )
 
 const (
-	port     = 8080
+	port     = "8080"
 	eightHrs = 8 * 60 * 60 * time.Second
 )
 
@@ -34,14 +35,16 @@ type tempStore struct {
 var tstore tempStore
 
 func main() {
+	indexTemplatePath := os.Getenv("INDEX_TMPL_PATH")
 	tmpl := template.New("index.html")
-	tmpl, err := tmpl.ParseFiles("./index.html")
+	tmpl, err := tmpl.ParseFiles(indexTemplatePath)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	db, err := sql.Open("sqlite3", "./app.db")
+	dbPath := os.Getenv("APP_DB_PATH")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Println(err)
 		return
@@ -139,7 +142,11 @@ func main() {
 		}
 	})))
 
-	srv := &http.Server{Addr: fmt.Sprintf(":%d", port)}
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = port
+	}
+	srv := &http.Server{Addr: fmt.Sprintf(":%s", httpPort)}
 
 	log.Println(srv.ListenAndServe())
 }
