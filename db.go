@@ -59,8 +59,36 @@ func selectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 	return ids, nil
 }
 
-func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
+func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE added >= %d`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var items []*item
+	for rows.Next() {
+		var it item
+		err := rows.Scan(&it.ID, &it.Title,
+			&it.URL, &it.Deleted,
+			&it.Dead, &it.DiscussLink,
+			&it.Added, &it.Domain)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		items = append(items, &it)
+	}
+
+	return items, nil
+}
+
+func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	rows, err := db.Query(stmt)

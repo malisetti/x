@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	port     = 8080
 	eightHrs = 8 * 60 * 60 * time.Second
 )
 
@@ -127,13 +128,18 @@ func main() {
 			return
 		}
 
-		err = tmpl.Execute(w, items)
+		data := make(map[int]*item)
+		for _, it := range items {
+			data[it.ID] = it
+		}
+
+		err = tmpl.Execute(w, data)
 		if err != nil {
 			log.Println(err)
 		}
 	})))
 
-	srv := &http.Server{Addr: fmt.Sprintf(":%d", 8080)}
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", port)}
 
 	log.Println(srv.ListenAndServe())
 }
@@ -158,9 +164,9 @@ func flow(ctx context.Context, db *sql.DB) {
 		log.Println(err)
 	}
 
-	eightHrsBack := time.Now().Add(-eightHrs)
+	sixteenHrsBack := time.Now().Add(-2 * eightHrs)
 
-	resultItems, err := selectItemsBefore(db, eightHrsBack.Unix())
+	resultItems, err := selectItemsBefore(db, sixteenHrsBack.Unix())
 	if err != nil {
 		log.Println(err)
 	}
