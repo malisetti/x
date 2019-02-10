@@ -33,20 +33,11 @@ func urlToDomain(link string) (string, error) {
 	return r.Replace(u.Hostname()), nil
 }
 
-func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
-	// send items
-	itemIds, err := fetchTopHNStories(ctx, limit)
-	if err != nil {
-		return nil, err
-	}
-	ids := make(chan int)
-	go func() {
-		defer close(ids)
-		for _, itID := range itemIds {
-			ids <- itID
-		}
-	}()
+func fetchHNStoriesOf(ctx context.Context, ids []int) ([]*item, error) {
+	return fetchStoriesFrom(ctx, intsToChan(ids))
+}
 
+func fetchStoriesFrom(ctx context.Context, ids <-chan int) ([]*item, error) {
 	itemsCh := make(chan *item)
 	var wg sync.WaitGroup
 	for i := 0; i < 4; i++ {
@@ -76,6 +67,27 @@ func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
 	}
 
 	return items, nil
+}
+
+func intsToChan(itemIds []int) <-chan int {
+	ids := make(chan int)
+	go func() {
+		defer close(ids)
+		for _, itID := range itemIds {
+			ids <- itID
+		}
+	}()
+	return ids
+}
+
+func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
+	// send items
+	itemIds, err := fetchTopHNStories(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	return fetchStoriesFrom(ctx, intsToChan(itemIds))
 }
 
 func fetchItem(ctx context.Context, itemID int) (*item, error) {
