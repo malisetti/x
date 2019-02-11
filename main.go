@@ -101,7 +101,7 @@ func main() {
 		return ra
 	}
 
-	fs := http.FileServer(http.Dir("static"))
+	fs := http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	http.Handle("/", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
