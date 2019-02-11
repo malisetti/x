@@ -63,79 +63,27 @@ func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
-	rows, err := db.Query(stmt)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-	var items []*item
-	for rows.Next() {
-		var it item
-		var dead, deleted int
-		err := rows.Scan(&it.ID, &it.Title,
-			&it.URL, &deleted,
-			&dead, &it.DiscussLink,
-			&it.Added, &it.Domain)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		if dead == 1 {
-			it.Dead = true
-		}
-		if deleted == 1 {
-			it.Deleted = true
-		}
-
-		items = append(items, &it)
-	}
-
-	return items, nil
+	return execStmtAndGetItems(db, stmt)
 }
 
 func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
-	rows, err := db.Query(stmt)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-	var items []*item
-	for rows.Next() {
-		var it item
-		var dead, deleted int
-		err := rows.Scan(&it.ID, &it.Title,
-			&it.URL, &deleted,
-			&dead, &it.DiscussLink,
-			&it.Added, &it.Domain)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		if dead == 1 {
-			it.Dead = true
-		}
-		if deleted == 1 {
-			it.Deleted = true
-		}
-
-		items = append(items, &it)
-	}
-
-	return items, nil
+	return execStmtAndGetItems(db, stmt)
 }
 
-func selectItemsByIDs(db *sql.DB, ids []int) ([]*item, error) {
+func selectItemsByIDsDesc(db *sql.DB, ids []int) ([]*item, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `)`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
 
+	return execStmtAndGetItems(db, stmt)
+}
+
+func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err

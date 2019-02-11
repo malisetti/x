@@ -30,14 +30,23 @@ const (
 type tempStore struct {
 	sync.RWMutex
 	currentTop30ItemIds []int
+	tmpl                *template.Template
 }
 
 var tstore tempStore
 
 func main() {
-	indexTemplatePath := os.Getenv("INDEX_TMPL_PATH")
-	tmpl := template.New("index.html")
-	tmpl, err := tmpl.ParseFiles(indexTemplatePath)
+	readTemplate := func() error {
+		indexTemplatePath := os.Getenv("INDEX_TMPL_PATH")
+		tmpl := template.New("index.html")
+		tmpl, err := tmpl.ParseFiles(indexTemplatePath)
+		tstore.Lock()
+		defer tstore.Unlock()
+		tstore.tmpl = tmpl
+		return err
+	}
+
+	err := readTemplate()
 	if err != nil {
 		log.Println(err)
 		return
@@ -86,6 +95,21 @@ func main() {
 		}
 	}()
 
+	go func() {
+		eightHrsTicker := time.NewTicker(eightHrs)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-eightHrsTicker.C:
+				err := readTemplate()
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}
+	}()
+
 	const headerXForwardedFor = "X-Forwarded-For"
 	const headerXRealIP = "X-Real-IP"
 	realIP := func(r *http.Request) string {
@@ -130,7 +154,7 @@ func main() {
 		}
 		currentTopPlusEightHrs := append(ids, oIds...)
 
-		items, err := selectItemsByIDs(db, currentTopPlusEightHrs)
+		items, err := selectItemsByIDsDesc(db, currentTopPlusEightHrs)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -141,10 +165,14 @@ func main() {
 			data[it.ID] = it
 		}
 
-		err = tmpl.Execute(w, data)
-		if err != nil {
-			log.Println(err)
-		}
+		func() {
+			tstore.RLock()
+			defer tstore.RUnlock()
+			err = tstore.tmpl.Execute(w, data)
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 	})))
 
 	httpPort := os.Getenv("HTTP_PORT")
