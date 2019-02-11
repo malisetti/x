@@ -73,6 +73,16 @@ func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
 	return execStmtAndGetItems(db, stmt)
 }
 
+func selectItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
+	var idsStr []string
+	for _, id := range ids {
+		idsStr = append(idsStr, fmt.Sprintf("%d", id))
+	}
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
+
+	return execStmtAndGetItems(db, stmt)
+}
+
 func selectItemsByIDsDesc(db *sql.DB, ids []int) ([]*item, error) {
 	var idsStr []string
 	for _, id := range ids {

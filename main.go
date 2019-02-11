@@ -15,6 +15,8 @@ import (
 
 	"sync"
 
+	"math/rand"
+
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
@@ -154,7 +156,14 @@ func main() {
 		}
 		currentTopPlusEightHrs := append(ids, oIds...)
 
-		items, err := selectItemsByIDsDesc(db, currentTopPlusEightHrs)
+		var items []*item
+		ra := rand.New(rand.NewSource(time.Now().Unix()))
+		num := ra.Intn(2)
+		if num == 0 {
+			items, err = selectItemsByIDsDesc(db, currentTopPlusEightHrs)
+		} else {
+			items, err = selectItemsByIDsAsc(db, currentTopPlusEightHrs)
+		}
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
