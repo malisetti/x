@@ -160,15 +160,10 @@ func main() {
 			return
 		}
 
-		data := make(map[int]*item)
-		for _, it := range items {
-			data[it.ID] = it
-		}
-
 		func() {
 			tstore.RLock()
 			defer tstore.RUnlock()
-			err = tstore.tmpl.Execute(w, data)
+			err = tstore.tmpl.Execute(w, items)
 			if err != nil {
 				log.Println(err)
 			}

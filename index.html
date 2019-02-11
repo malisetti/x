@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png">
   <link rel="manifest" href="static/site.webmanifest">
 
-  <title>Tech & News | 8hrs</title>
+  <title>Tech & News | Past 8hrs</title>
   <style>
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;line-height:1.5;font-size:1em;margin:10px;-webkit-text-size-adjust:100%}
     .list li {
@@ -38,12 +38,12 @@
 
 <body>
   <header>
-      <h1>Tech & News - Past 8hrs</h1>
+      <h1>Tech & News</h1>
   </header>
   
   <main>
       <ol class="list">
-          {{ range $id, $item := . }}
+          {{ range $item := . }}
           <li>
             {{ if $item.Deleted }}
               <del>
