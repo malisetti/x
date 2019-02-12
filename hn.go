@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -18,6 +21,26 @@ const (
 )
 
 var r = strings.NewReplacer("http://", "", "https://", "", "www.", "", "www2.", "", "www3.", "")
+
+func fetchCurrentItems(db *sql.DB, ids []int) ([]*item, error) {
+	eightHrsBack := time.Now().Add(-eightHrs)
+	oIds, err := selectItemsIdsBefore(db, eightHrsBack.Unix())
+	if err != nil {
+		return nil, err
+	}
+	currentTopPlusEightHrs := append(ids, oIds...)
+
+	var items []*item
+	ra := rand.New(rand.NewSource(time.Now().Unix()))
+	num := ra.Intn(2)
+	if num == 0 {
+		items, err = selectItemsByIDsDesc(db, currentTopPlusEightHrs)
+	} else {
+		items, err = selectItemsByIDsAsc(db, currentTopPlusEightHrs)
+	}
+
+	return items, err
+}
 
 func urlToDomain(link string) (string, error) {
 	u, err := url.Parse(link)

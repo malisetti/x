@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -15,9 +16,7 @@ import (
 
 	"sync"
 
-	"math/rand"
-
-	"github.com/NYTimes/gziphandler"
+	"github.com/gorilla/mux"
 
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
@@ -129,10 +128,10 @@ func main() {
 		return ra
 	}
 
-	fs := http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))
-	http.Handle("/static/", gziphandler.GzipHandler(http.StripPrefix("/static/", fs)))
+	r := mux.NewRouter()
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))))
 
-	http.Handle("/", middleware.Handler(gziphandler.GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// log CF- headers
 		for h, v := range r.Header {
 			h = strings.ToUpper(h) // headers are case insensitive
@@ -143,6 +142,11 @@ func main() {
 		log.Println(realIP(r))
 		log.Println(r.UserAgent())
 
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+
 		var ids []int
 		func() {
 			tstore.RLock()
@@ -150,22 +154,8 @@ func main() {
 			ids = tstore.currentTop30ItemIds
 		}()
 
-		eightHrsBack := time.Now().Add(-eightHrs)
-		oIds, err := selectItemsIdsBefore(db, eightHrsBack.Unix())
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-			return
-		}
-		currentTopPlusEightHrs := append(ids, oIds...)
+		items, err := fetchCurrentItems(db, ids)
 
-		var items []*item
-		ra := rand.New(rand.NewSource(time.Now().Unix()))
-		num := ra.Intn(2)
-		if num == 0 {
-			items, err = selectItemsByIDsDesc(db, currentTopPlusEightHrs)
-		} else {
-			items, err = selectItemsByIDsAsc(db, currentTopPlusEightHrs)
-		}
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -179,13 +169,37 @@ func main() {
 				log.Println(err)
 			}
 		}()
-	}))))
+	}))).Methods(http.MethodHead, http.MethodGet)
+
+	r.Handle("/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ids []int
+		func() {
+			tstore.RLock()
+			defer tstore.RUnlock()
+			ids = tstore.currentTop30ItemIds
+		}()
+		items, err := fetchCurrentItems(db, ids)
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+		err = json.NewEncoder(w).Encode(items)
+		if err != nil {
+			log.Println(err)
+		}
+	})).Methods(http.MethodGet)
+
+	http.Handle("/", r)
 
 	httpPort := os.Getenv("HTTP_PORT")
 	if httpPort == "" {
 		httpPort = port
 	}
-	srv := &http.Server{Addr: fmt.Sprintf(":%s", httpPort)}
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%s", httpPort),
+		ReadTimeout:  2 * time.Second,
+		WriteTimeout: 2 * time.Second,
+	}
 
 	log.Println(srv.ListenAndServe())
 }
