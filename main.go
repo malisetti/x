@@ -313,6 +313,21 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 	// 	log.Println(err)
 	// }
 
+	var itemIDs []int
+	for _, it := range items {
+		itemIDs = append(itemIDs, it.ID)
+	}
+
+	idToTweetIDs, err := fetchTweetIDsFor(db, itemIDs)
+	if err != nil {
+		log.Println(err)
+	}
+	for _, it := range items {
+		if tweetID, ok := idToTweetIDs[it.ID]; ok {
+			it.TweetID = tweetID
+		}
+	}
+
 	errs := tweetItems(ctx, tapi, items)
 	for id, err := range errs {
 		log.Printf("%d tweeting failed with %s\n", id, err)
