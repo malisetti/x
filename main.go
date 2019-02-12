@@ -78,13 +78,18 @@ func main() {
 		return
 	}
 
+	errs := updateItemsTable(db, addDescColumn, addImgsColumn)
+	for _, err = range errs {
+		log.Println(err)
+	}
+
 	middleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	flow(ctx, db)
+	go flow(ctx, db)
 
 	go func() {
 		fiveMinTicker := time.NewTicker(5 * time.Minute)
@@ -288,6 +293,10 @@ func flow(ctx context.Context, db *sql.DB) {
 		}
 	}
 
+	err = populateItemsWithPreview(items)
+	if err != nil {
+		log.Println(err)
+	}
 	_, err = insertOrReplaceItems(db, items)
 	if err != nil {
 		log.Println(err)
