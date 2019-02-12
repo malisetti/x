@@ -217,7 +217,7 @@ func fetchTweetIDsFor(db *sql.DB, ids []int) (map[int]int64, error) {
 			continue
 		}
 
-		if tweetID.Valid {
+		if tweetID.Valid && tweetID.Int64 > 0 { // improve the query
 			idToTweetIDs[id] = tweetID.Int64
 		}
 	}
