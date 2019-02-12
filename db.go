@@ -165,11 +165,6 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
 		}
 		added := fmt.Sprintf("COALESCE((SELECT added FROM items WHERE id = %d), %d)", it.ID, now)
-		discussLink := fmt.Sprintf(hnPostLinkURL, it.ID)
-		domain, err := urlToDomain(it.URL)
-		if err != nil {
-			log.Println(err)
-		}
 
 		var deleted int
 		if it.Deleted {
@@ -185,7 +180,7 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 			images = strings.Join(it.Images, "|")
 		}
 
-		v := fmt.Sprintf(valueArgsTmpl, it.ID, it.Title, it.URL, deleted, dead, discussLink, added, domain, it.Descriprion, images, it.TweetID)
+		v := fmt.Sprintf(valueArgsTmpl, it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, added, it.Domain, it.Descriprion, images, it.TweetID)
 		valueArgs = append(valueArgs, v)
 	}
 	stmt := fmt.Sprintf(`INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, images, tweetID) VALUES %s`, strings.Join(valueArgs, ","))

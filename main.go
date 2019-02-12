@@ -326,6 +326,12 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		if tweetID, ok := idToTweetIDs[it.ID]; ok {
 			it.TweetID = tweetID
 		}
+
+		it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
+		domain, err := urlToDomain(it.URL)
+		if err != nil {
+			it.Domain = domain
+		}
 	}
 
 	errs := tweetItems(ctx, tapi, items)
