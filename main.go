@@ -171,7 +171,7 @@ func main() {
 		}()
 	}))).Methods(http.MethodHead, http.MethodGet)
 
-	r.Handle("/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/json", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ids []int
 		func() {
 			tstore.RLock()
@@ -187,7 +187,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-	})).Methods(http.MethodGet)
+	}))).Methods(http.MethodGet)
 
 	http.Handle("/", r)
 
