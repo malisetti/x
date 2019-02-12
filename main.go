@@ -183,6 +183,7 @@ func main() {
 			fmt.Fprintf(w, "%s", err)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(items)
 		if err != nil {
 			log.Println(err)
