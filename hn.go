@@ -8,8 +8,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,8 +19,6 @@ const (
 	storyLinkURL  = "https://hacker-news.firebaseio.com/v0/item/%d.json"
 	hnPostLinkURL = "https://news.ycombinator.com/item?id=%d"
 )
-
-var r = strings.NewReplacer("http://", "", "https://", "", "www.", "", "www2.", "", "www3.", "")
 
 func fetchCurrentItems(db *sql.DB, ids []int) ([]*item, error) {
 	eightHrsBack := time.Now().Add(-eightHrs)
@@ -44,20 +40,6 @@ func fetchCurrentItems(db *sql.DB, ids []int) ([]*item, error) {
 	return items, err
 }
 
-func urlToDomain(link string) (string, error) {
-	u, err := url.Parse(link)
-	if err != nil {
-		return "", err
-	}
-	parts := strings.Split(u.Hostname(), ".")
-	if len(parts) >= 2 {
-		domain := parts[len(parts)-2] + "." + parts[len(parts)-1]
-		return domain, nil
-	}
-
-	return r.Replace(u.Hostname()), nil
-}
-
 func fetchHNStoriesOf(ctx context.Context, ids []int) ([]*item, error) {
 	return fetchStoriesFrom(ctx, intsToChan(ids))
 }
@@ -70,6 +52,9 @@ func fetchStoriesFrom(ctx context.Context, ids <-chan int) ([]*item, error) {
 		go func() {
 			defer wg.Done()
 			for id := range ids {
+				if ctx.Err() != nil {
+					return
+				}
 				item, err := fetchItem(ctx, id)
 				if err != nil {
 					log.Println(err) // warning
@@ -92,17 +77,6 @@ func fetchStoriesFrom(ctx context.Context, ids <-chan int) ([]*item, error) {
 	}
 
 	return items, nil
-}
-
-func intsToChan(itemIds []int) <-chan int {
-	ids := make(chan int)
-	go func() {
-		defer close(ids)
-		for _, itID := range itemIds {
-			ids <- itID
-		}
-	}()
-	return ids
 }
 
 func fetchTopStories(ctx context.Context, limit int) ([]*item, error) {
@@ -163,22 +137,16 @@ func fetchTopHNStories(ctx context.Context, limit int) ([]int, error) {
 }
 
 func populateItemsWithPreview(items []*item) error {
-	itemsChan := make(chan *item)
-	go func() {
-		defer close(itemsChan)
-		for _, it := range items {
-			if it.Descriprion != "" || len(it.Images) != 0 {
-				continue
-			}
-			itemsChan <- it
-		}
-	}()
+	itemsChan := itemsToChan(items)
 	var wg sync.WaitGroup
 	for i := 0; i < 4; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for it := range itemsChan {
+				if it.Descriprion != "" || len(it.Images) != 0 {
+					continue
+				}
 				preview, err := fetchPreview(it.URL)
 				if err != nil {
 					log.Println(err)

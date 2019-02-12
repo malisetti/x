@@ -12,4 +12,5 @@ type item struct {
 
 	Descriprion string   `json:"description"`
 	Images      []string `json:"images"`
+	TweetID     int64    `json:"tweetID"`
 }
