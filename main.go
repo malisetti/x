@@ -17,6 +17,8 @@ import (
 
 	"math/rand"
 
+	"github.com/NYTimes/gziphandler"
+
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
@@ -128,9 +130,9 @@ func main() {
 	}
 
 	fs := http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/static/", gziphandler.GzipHandler(http.StripPrefix("/static/", fs)))
 
-	http.Handle("/", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/", middleware.Handler(gziphandler.GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// log CF- headers
 		for h, v := range r.Header {
 			h = strings.ToUpper(h) // headers are case insensitive
@@ -177,7 +179,7 @@ func main() {
 				log.Println(err)
 			}
 		}()
-	})))
+	}))))
 
 	httpPort := os.Getenv("HTTP_PORT")
 	if httpPort == "" {
