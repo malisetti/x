@@ -8,3 +8,6 @@ CREATE TABLE IF NOT EXISTS `items` (
 	`discussLink`	TEXT,
 	`domain`	TEXT
 );
+
+ALTER TABLE items ADD COLUMN `description` text;
+ALTER TABLE items ADD COLUMN `images` text;

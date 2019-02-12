@@ -9,4 +9,8 @@ type item struct {
 	DiscussLink string `json:"discussLink"`
 	Added       int    `json:"added"`
 	Domain      string `json:"domain"`
+
+	Descriprion string   `json:"description"`
+	Images      []string `json:"images"`
+	TweetID     int64    `json:"tweetID"`
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
 
+	"github.com/ChimeraCoder/anaconda"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -55,6 +56,18 @@ func main() {
 		return
 	}
 
+	twAccessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
+	twAccessTokenSecret := os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
+	twConsumerAPIKey := os.Getenv("TWITTER_CONSUMER_API_KEY")
+	twConsumerSecretKey := os.Getenv("TWITTER_CONSUMER_SECRET_KEY")
+
+	if twAccessToken == "" || twAccessTokenSecret == "" || twConsumerAPIKey == "" || twConsumerSecretKey == "" {
+		log.Println("twitter tokens should be set in env")
+		return
+	}
+
+	tapi := anaconda.NewTwitterApiWithCredentials(twAccessToken, twAccessTokenSecret, twConsumerAPIKey, twConsumerSecretKey)
+
 	dbPath := os.Getenv("APP_DB_PATH")
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -78,13 +91,18 @@ func main() {
 		return
 	}
 
+	errs := updateItemsTable(db, addDescColumn, addImgsColumn, addTweetIDColumn)
+	for _, err = range errs {
+		log.Println(err)
+	}
+
 	middleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	flow(ctx, db)
+	flow(ctx, db, tapi)
 
 	go func() {
 		fiveMinTicker := time.NewTicker(5 * time.Minute)
@@ -93,7 +111,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-fiveMinTicker.C:
-				flow(ctx, db)
+				flow(ctx, db, tapi)
 			}
 		}
 	}()
@@ -141,11 +159,6 @@ func main() {
 		}
 		log.Println(realIP(r))
 		log.Println(r.UserAgent())
-
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-			return
-		}
 
 		var ids []int
 		func() {
@@ -205,11 +218,11 @@ func main() {
 	log.Println(srv.ListenAndServe())
 }
 
-func flow(ctx context.Context, db *sql.DB) {
+func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	ids, err := fetchTopHNStories(ctx, 30)
+	ids, err := fetchTopHNStories(ctx, 3)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -220,7 +233,7 @@ func flow(ctx context.Context, db *sql.DB) {
 		}()
 	}
 
-	items, err := fetchTopStories(tctx, 30)
+	items, err := fetchTopStories(tctx, 3)
 	if err != nil {
 		log.Println(err)
 	}
@@ -232,6 +245,7 @@ func flow(ctx context.Context, db *sql.DB) {
 		log.Println(err)
 	}
 	var olderItemsIDsNotInTop []int
+	var tweetIDsFromOlderItemsToBeDeleted []int64
 	for _, it := range resultItems {
 		there := false
 		for _, topIt := range items {
@@ -242,12 +256,18 @@ func flow(ctx context.Context, db *sql.DB) {
 		}
 		if !there {
 			olderItemsIDsNotInTop = append(olderItemsIDsNotInTop, it.ID)
+			tweetIDsFromOlderItemsToBeDeleted = append(tweetIDsFromOlderItemsToBeDeleted, it.TweetID)
 		}
 	}
 	if len(olderItemsIDsNotInTop) > 0 {
 		err = deleteItemsWith(db, olderItemsIDsNotInTop)
 		if err != nil {
 			log.Println(err)
+		}
+
+		errs := deleteTweets(ctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
+		for id, err := range errs {
+			log.Printf("%d tweet deletion failed with %s\n", id, err)
 		}
 	}
 
@@ -288,6 +308,15 @@ func flow(ctx context.Context, db *sql.DB) {
 		}
 	}
 
+	// err = populateItemsWithPreview(items)
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+
+	errs := tweetItems(ctx, tapi, items)
+	for id, err := range errs {
+		log.Printf("%d tweeting failed with %s\n", id, err)
+	}
 	_, err = insertOrReplaceItems(db, items)
 	if err != nil {
 		log.Println(err)
