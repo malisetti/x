@@ -7,6 +7,7 @@ ExecStart=/home/abbiya/x
 Restart=on-failure
 Environment="INDEX_TMPL_PATH=/home/abbiya/index.html"
 Environment="APP_DB_PATH=/home/abbiya/app.db"
+Environment="STATIC_DIR=/home/abbiya/static"
 Environment="HTTP_PORT=80"
 
 [Install]
