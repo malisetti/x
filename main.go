@@ -222,7 +222,7 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	ids, err := fetchTopHNStories(ctx, 3)
+	ids, err := fetchTopHNStories(ctx, 30)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -233,7 +233,7 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		}()
 	}
 
-	items, err := fetchTopStories(tctx, 3)
+	items, err := fetchTopStories(tctx, 30)
 	if err != nil {
 		log.Println(err)
 	}
