@@ -6,6 +6,8 @@ Use latest go with modules to build this project.
 
 build.sh builds with version as the latest git commit hash.
 
+sqlitedb is needed. create a database file before running the app.
+
 configuration that is required to run the executable are passed as env vars and listed in  x8h.service
 
 * INDEX_TMPL_PATH=/home/abbiya/index.html // path to html file
@@ -20,8 +22,9 @@ configuration that is required to run the executable are passed as env vars and 
 
 there are two http endpoints.
 
-`/` serves the index html 
-`/json` serves the news items as json
+1. `/` serves the index html 
+2. `/json` serves the news items as json
+
 (order of list items is randomized between requests)
 
 http rate limiting middleware is used to limit requests to 5 per minute.

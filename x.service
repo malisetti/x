@@ -9,6 +9,10 @@ Environment="INDEX_TMPL_PATH=/home/abbiya/index.html"
 Environment="APP_DB_PATH=/home/abbiya/app.db"
 Environment="STATIC_DIR=/home/abbiya/static"
 Environment="HTTP_PORT=80"
+Environment="TWITTER_ACCESS_TOKEN=x"
+Environment="TWITTER_ACCESS_TOKEN_SECRET=x"
+Environment="TWITTER_CONSUMER_API_KEY=x"
+Environment="TWITTER_CONSUMER_SECRET_KEY="
 
 [Install]
 WantedBy=default.target
