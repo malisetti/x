@@ -161,9 +161,6 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 	valueArgsTmpl := "(%d, \"%s\", \"%s\", %d, %d, \"%s\", %s, \"%s\", \"%s\", \"%s\", %d)"
 	now := time.Now().Unix()
 	for _, it := range items {
-		if it.URL == "" {
-			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
-		}
 		added := fmt.Sprintf("COALESCE((SELECT added FROM items WHERE id = %d), %d)", it.ID, now)
 
 		var deleted int
