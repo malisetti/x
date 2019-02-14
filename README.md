@@ -20,10 +20,9 @@ configuration that is required to run the executable are passed as env vars and 
 * TWITTER_CONSUMER_SECRET_KEY=
 
 
-there are two http endpoints.
+there is one http endpoint.
 
-1. `/` serves the index html 
-2. `/json` serves the news items as json
+. `/` serves the index html or json based on reqquested content-type 
 
 (order of list items is randomized between requests)
 

@@ -174,32 +174,22 @@ func main() {
 			return
 		}
 
-		func() {
-			tstore.RLock()
-			defer tstore.RUnlock()
-			err = tstore.tmpl.Execute(w, items)
+		requestedContentType := r.Header.Get("Content-Type")
+		if requestedContentType == "application/json" {
+			w.Header().Set("Content-Type", "application/json")
+			err = json.NewEncoder(w).Encode(items)
 			if err != nil {
 				log.Println(err)
 			}
-		}()
-	}))).Methods(http.MethodHead, http.MethodGet)
-
-	r.Handle("/json", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ids []int
-		func() {
-			tstore.RLock()
-			defer tstore.RUnlock()
-			ids = tstore.currentTop30ItemIds
-		}()
-		items, err := fetchCurrentItems(db, ids)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(items)
-		if err != nil {
-			log.Println(err)
+		} else {
+			func() {
+				tstore.RLock()
+				defer tstore.RUnlock()
+				err = tstore.tmpl.Execute(w, items)
+				if err != nil {
+					log.Println(err)
+				}
+			}()
 		}
 	}))).Methods(http.MethodGet)
 
