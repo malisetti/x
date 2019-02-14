@@ -385,17 +385,20 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 			}
 
 			it.TweetID = eit.TweetID
-			if it.URL == "" {
-				it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
-			}
-			it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
-			domain, err := urlToDomain(it.URL)
-			if err == nil {
-				it.Domain = domain
-			}
 			it.Descriprion = eit.Descriprion
 
 			break
+		}
+	}
+
+	for _, it := range items {
+		if it.URL == "" {
+			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
+		}
+		it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
+		domain, err := urlToDomain(it.URL)
+		if err == nil {
+			it.Domain = domain
 		}
 	}
 
