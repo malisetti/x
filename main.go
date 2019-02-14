@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html"
 	"html/template"
 	"log"
 	"os"
@@ -91,7 +92,7 @@ func main() {
 		return
 	}
 
-	errs := updateItemsTable(db, addByColumn, addTextxColumn, addDescColumn, addImgsColumn, addTweetIDColumn)
+	errs := updateItemsTable(db, addByColumn, addTextxColumn, addDescColumn, addTweetIDColumn)
 	for _, err = range errs {
 		log.Println(err)
 	}
@@ -202,9 +203,9 @@ func main() {
 				Created: time.Unix(int64(it.Added), 0),
 			}
 			if strings.TrimSpace(it.Descriprion) != "" {
-				feedItem.Description = it.Descriprion
+				feedItem.Description = html.UnescapeString(it.Descriprion)
 			} else if strings.TrimSpace(it.Textx) != "" {
-				feedItem.Description = it.Textx
+				feedItem.Description = html.UnescapeString(it.Textx)
 			} else {
 				feedItem.Description = ""
 			}
@@ -393,7 +394,6 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 				it.Domain = domain
 			}
 			it.Descriprion = eit.Descriprion
-			it.Images = eit.Images
 
 			break
 		}

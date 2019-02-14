@@ -3,13 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html"
 	"log"
 	"strings"
 	"time"
 )
 
 const addDescColumn string = "ALTER TABLE items ADD COLUMN `description` TEXT;"
-const addImgsColumn string = "ALTER TABLE items ADD COLUMN `images` TEXT;"
 const addTweetIDColumn string = "ALTER TABLE items ADD COLUMN `tweetID` INTEGER"
 const addByColumn string = "ALTER TABLE items ADD COLUMN `by` TEXT;"
 const addTextxColumn string = "ALTER TABLE items ADD COLUMN `textx` TEXT;"
@@ -78,14 +78,14 @@ func selectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 }
 
 func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, images, tweetID, by, textx FROM items WHERE added >= %d`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	return execStmtAndGetItems(db, stmt)
 }
 
 func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, images, tweetID, by, textx FROM items WHERE added <= %d`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	return execStmtAndGetItems(db, stmt)
@@ -96,7 +96,7 @@ func selectItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, images, tweetID, by, textx FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
 
 	return execStmtAndGetItems(db, stmt)
 }
@@ -106,7 +106,7 @@ func selectItemsByIDsDesc(db *sql.DB, ids []int) ([]*item, error) {
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, images, tweetID, by, textx FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
 
 	return execStmtAndGetItems(db, stmt)
 }
@@ -122,15 +122,14 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 	for rows.Next() {
 		var it item
 		var dead, deleted int
-		var description, images, by, textx sql.NullString
+		var description, by, textx sql.NullString
 		var tweetID sql.NullInt64
 		err := rows.Scan(&it.ID, &it.Title,
 			&it.URL, &deleted,
 			&dead, &it.DiscussLink,
 			&it.Added, &it.Domain,
-			&description, &images,
-			&tweetID, &by,
-			&textx,
+			&description, &tweetID,
+			&by, &textx,
 		)
 		if err != nil {
 			log.Println(err)
@@ -144,9 +143,7 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 		}
 
 		it.Descriprion = description.String
-		if images.String != "" {
-			it.Images = strings.Split(images.String, "|")
-		}
+
 		if tweetID.Valid {
 			it.TweetID = tweetID.Int64
 		}
@@ -162,8 +159,8 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 	var valueArgs []string
 
-	// id, title, url, deleted, dead, discussLink, added, domain, description, images, tweetID, by, textx
-	valueArgsTmpl := "(%d, \"%s\", \"%s\", %d, %d, \"%s\", %s, \"%s\", \"%s\", \"%s\", %d, \"%s\", \"%s\")"
+	// id, title, url, deleted, dead, discussLink, added, domain, description, tweetID, by, textx
+	valueArgsTmpl := "(%d, \"%s\", \"%s\", %d, %d, \"%s\", %s, \"%s\", \"%s\", %d, \"%s\", \"%s\")"
 	now := time.Now().Unix()
 	for _, it := range items {
 		added := fmt.Sprintf("COALESCE((SELECT added FROM items WHERE id = %d), %d)", it.ID, now)
@@ -177,15 +174,13 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 			dead = 1
 		}
 
-		var images string
-		if len(it.Images) > 0 {
-			images = strings.Join(it.Images, "|")
-		}
+		textx := html.EscapeString(it.Textx)
+		description := html.EscapeString(it.Descriprion)
 
-		v := fmt.Sprintf(valueArgsTmpl, it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, added, it.Domain, it.Descriprion, images, it.TweetID, it.By, it.Textx)
+		v := fmt.Sprintf(valueArgsTmpl, it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, added, it.Domain, description, it.TweetID, it.By, textx)
 		valueArgs = append(valueArgs, v)
 	}
-	stmt := fmt.Sprintf(`INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, images, tweetID, by, textx) VALUES %s`, strings.Join(valueArgs, ","))
+	stmt := fmt.Sprintf(`INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx) VALUES %s`, strings.Join(valueArgs, ","))
 
 	return db.Exec(stmt)
 }

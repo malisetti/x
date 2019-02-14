@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS `items` (
 );
 
 ALTER TABLE items ADD COLUMN `description` text;
-ALTER TABLE items ADD COLUMN `images` text;

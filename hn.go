@@ -145,7 +145,7 @@ func populateItemsWithPreview(items []*item) error {
 		go func() {
 			defer wg.Done()
 			for it := range itemsChan {
-				if strings.TrimSpace(it.Descriprion) != "" || len(it.Images) != 0 {
+				if strings.TrimSpace(it.Descriprion) != "" {
 					continue
 				}
 				preview, err := fetchPreview(it.URL)
@@ -155,7 +155,6 @@ func populateItemsWithPreview(items []*item) error {
 				}
 
 				it.Descriprion = preview.Description
-				it.Images = preview.Images
 			}
 		}()
 	}
