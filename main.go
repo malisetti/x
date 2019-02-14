@@ -201,10 +201,10 @@ func main() {
 				Author:  &feeds.Author{Name: it.By},
 				Created: time.Unix(int64(it.Added), 0),
 			}
-			if strings.TrimSpace(it.Text) != "" {
-				feedItem.Description = it.Text
-			} else if strings.TrimSpace(it.Descriprion) != "" {
+			if strings.TrimSpace(it.Descriprion) != "" {
 				feedItem.Description = it.Descriprion
+			} else if strings.TrimSpace(it.Text) != "" {
+				feedItem.Description = it.Text
 			} else {
 				feedItem.Description = ""
 			}
