@@ -23,6 +23,7 @@ configuration that is required to run the executable are passed as env vars and 
 there is one http endpoint.
 
 . `/` serves the index html or json based on reqquested content-type 
+. `/feed/{rss|atom|json}` responds with rss or atom or json feed
 
 (order of list items is randomized between requests)
 
