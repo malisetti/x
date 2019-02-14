@@ -79,7 +79,7 @@ func main() {
 
 	store := sim.NewStore()
 	// Define a limit rate to 5 requests per minute.
-	rate, err := limiter.NewRateFromFormatted("5-M")
+	rate, err := limiter.NewRateFromFormatted("10-M")
 	if err != nil {
 		log.Println(err)
 		return
@@ -91,7 +91,7 @@ func main() {
 		return
 	}
 
-	errs := updateItemsTable(db, addDescColumn, addImgsColumn, addTweetIDColumn)
+	errs := updateItemsTable(db, addByColumn, addTextxColumn, addDescColumn, addImgsColumn, addTweetIDColumn)
 	for _, err = range errs {
 		log.Println(err)
 	}
@@ -102,7 +102,7 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	flow(ctx, db, tapi)
+	go flow(ctx, db, tapi)
 
 	go func() {
 		fiveMinTicker := time.NewTicker(5 * time.Minute)
@@ -203,8 +203,8 @@ func main() {
 			}
 			if strings.TrimSpace(it.Descriprion) != "" {
 				feedItem.Description = it.Descriprion
-			} else if strings.TrimSpace(it.Text) != "" {
-				feedItem.Description = it.Text
+			} else if strings.TrimSpace(it.Textx) != "" {
+				feedItem.Description = it.Textx
 			} else {
 				feedItem.Description = ""
 			}
@@ -325,10 +325,10 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 			log.Println(err)
 		}
 
-		errs := deleteTweets(ctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
-		for id, err := range errs {
-			log.Printf("%d tweet deletion failed with %s\n", id, err)
-		}
+		// errs := deleteTweets(ctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
+		// for id, err := range errs {
+		// 	log.Printf("%d tweet deletion failed with %s\n", id, err)
+		// }
 	}
 
 	eightHrsBack := time.Now().Add(-1 * eightHrs)
@@ -368,11 +368,6 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		}
 	}
 
-	// err = populateItemsWithPreview(items)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-
 	var itemIDs []int
 	for _, it := range items {
 		itemIDs = append(itemIDs, it.ID)
@@ -397,10 +392,16 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		}
 	}
 
-	errs := tweetItems(ctx, tapi, items)
-	for id, err := range errs {
-		log.Printf("%d tweeting failed with %s\n", id, err)
+	err = populateItemsWithPreview(items)
+	if err != nil {
+		log.Println(err)
 	}
+
+	// errs := tweetItems(ctx, tapi, items)
+	// for id, err := range errs {
+	// 	log.Printf("%d tweeting failed with %s\n", id, err)
+	// }
+
 	_, err = insertOrReplaceItems(db, items)
 	if err != nil {
 		log.Println(err)

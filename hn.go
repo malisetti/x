@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -144,7 +145,7 @@ func populateItemsWithPreview(items []*item) error {
 		go func() {
 			defer wg.Done()
 			for it := range itemsChan {
-				if it.Descriprion != "" || len(it.Images) != 0 {
+				if strings.TrimSpace(it.Descriprion) != "" || len(it.Images) != 0 {
 					continue
 				}
 				preview, err := fetchPreview(it.URL)
@@ -165,7 +166,7 @@ func populateItemsWithPreview(items []*item) error {
 }
 
 func fetchPreview(link string) (*goscraper.DocumentPreview, error) {
-	s, err := goscraper.Scrape(link, 2)
+	s, err := goscraper.Scrape(link, 1)
 	if err != nil {
 		return nil, err
 	}
