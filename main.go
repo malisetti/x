@@ -174,6 +174,7 @@ func main() {
 			return
 		}
 
+		requestedContentType := r.Header.Get("Content-Type")
 		if requestedContentType == "application/json" {
 			w.Header().Set("Content-Type", "application/json")
 			err = json.NewEncoder(w).Encode(items)
