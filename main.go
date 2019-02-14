@@ -105,12 +105,12 @@ func main() {
 	go flow(ctx, db, tapi)
 
 	go func() {
-		fiveMinTicker := time.NewTicker(5 * time.Minute)
+		sixMinTicker := time.NewTicker(6 * time.Minute)
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-fiveMinTicker.C:
+			case <-sixMinTicker.C:
 				flow(ctx, db, tapi)
 			}
 		}
@@ -277,10 +277,10 @@ func withHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
-	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	tctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	ids, err := fetchTopHNStories(ctx, 30)
+	ids, err := fetchTopHNStories(tctx, 30)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -325,10 +325,10 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 			log.Println(err)
 		}
 
-		// errs := deleteTweets(ctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
-		// for id, err := range errs {
-		// 	log.Printf("%d tweet deletion failed with %s\n", id, err)
-		// }
+		errs := deleteTweets(tctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
+		for id, err := range errs {
+			log.Printf("%d tweet deletion failed with %s\n", id, err)
+		}
 	}
 
 	eightHrsBack := time.Now().Add(-1 * eightHrs)
@@ -397,10 +397,10 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		log.Println(err)
 	}
 
-	// errs := tweetItems(ctx, tapi, items)
-	// for id, err := range errs {
-	// 	log.Printf("%d tweeting failed with %s\n", id, err)
-	// }
+	errs := tweetItems(tctx, tapi, items)
+	for id, err := range errs {
+		log.Printf("%d tweeting failed with %s\n", id, err)
+	}
 
 	_, err = insertOrReplaceItems(db, items)
 	if err != nil {
