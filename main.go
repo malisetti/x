@@ -373,22 +373,29 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		itemIDs = append(itemIDs, it.ID)
 	}
 
-	idToTweetIDs, err := fetchTweetIDsFor(db, itemIDs)
+	existingItems, err := selectItemsByIDsAsc(db, itemIDs)
 	if err != nil {
 		log.Println(err)
 	}
-	for _, it := range items {
-		if tweetID, ok := idToTweetIDs[it.ID]; ok {
-			it.TweetID = tweetID
-		}
+	for _, eit := range existingItems {
+		for _, it := range items {
+			if eit.ID != it.ID {
+				continue
+			}
 
-		if it.URL == "" {
-			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
-		}
-		it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
-		domain, err := urlToDomain(it.URL)
-		if err == nil {
-			it.Domain = domain
+			it.TweetID = eit.TweetID
+			if it.URL == "" {
+				it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
+			}
+			it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
+			domain, err := urlToDomain(it.URL)
+			if err == nil {
+				it.Domain = domain
+			}
+			it.Descriprion = eit.Descriprion
+			it.Images = eit.Images
+
+			break
 		}
 	}
 

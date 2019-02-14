@@ -189,35 +189,3 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 
 	return db.Exec(stmt)
 }
-
-func fetchTweetIDsFor(db *sql.DB, ids []int) (map[int]int64, error) {
-	var idsStr []string
-	for _, id := range ids {
-		idsStr = append(idsStr, fmt.Sprintf("%d", id))
-	}
-
-	stmt := `SELECT id, tweetID FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `)`
-
-	rows, err := db.Query(stmt)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-	idToTweetIDs := make(map[int]int64)
-	for rows.Next() {
-		var id int
-		var tweetID sql.NullInt64
-		err := rows.Scan(&id, &tweetID)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		if tweetID.Valid && tweetID.Int64 > 0 { // improve the query
-			idToTweetIDs[id] = tweetID.Int64
-		}
-	}
-
-	return idToTweetIDs, nil
-}
