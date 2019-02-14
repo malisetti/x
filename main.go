@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -23,6 +22,7 @@ import (
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/gorilla/feeds"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -96,7 +96,7 @@ func main() {
 		log.Println(err)
 	}
 
-	middleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
+	rlMiddleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -131,35 +131,10 @@ func main() {
 		}
 	}()
 
-	const headerXForwardedFor = "X-Forwarded-For"
-	const headerXRealIP = "X-Real-IP"
-	realIP := func(r *http.Request) string {
-		ra := r.RemoteAddr
-		if ip := r.Header.Get(headerXForwardedFor); ip != "" {
-			ra = strings.Split(ip, ", ")[0]
-		} else if ip := r.Header.Get(headerXRealIP); ip != "" {
-			ra = ip
-		} else {
-			ra, _, _ = net.SplitHostPort(ra)
-		}
-
-		return ra
-	}
-
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))))
 
-	r.Handle("/", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// log CF- headers
-		for h, v := range r.Header {
-			h = strings.ToUpper(h) // headers are case insensitive
-			if strings.HasPrefix(h, "CF-") {
-				log.Printf("%s : %s\n", strings.Replace(h, "CF-", "", -1), strings.Join(v, " "))
-			}
-		}
-		log.Println(realIP(r))
-		log.Println(r.UserAgent())
-
+	r.Handle("/", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		var ids []int
 		func() {
 			tstore.RLock()
@@ -193,6 +168,82 @@ func main() {
 		}
 	}))).Methods(http.MethodGet)
 
+	r.Handle("/feed/{type}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+		var ids []int
+		func() {
+			tstore.RLock()
+			defer tstore.RUnlock()
+			ids = tstore.currentTop30ItemIds
+		}()
+
+		items, err := fetchCurrentItems(db, ids)
+
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		feedType := vars["type"]
+		now := time.Now()
+		feed := &feeds.Feed{
+			Title:       "Tech & News | Past 8hrs",
+			Link:        &feeds.Link{Href: "https://8hrs.xyz"},
+			Description: "Discussions about Technology, Science and other News from hackernews",
+			Author:      &feeds.Author{Name: "Seshachalam Malisetti", Email: "abbiya@gmail.com"},
+			Created:     now,
+		}
+		var feedItems []*feeds.Item
+		for _, it := range items {
+			feedItem := &feeds.Item{
+				Title:   it.Title,
+				Link:    &feeds.Link{Href: it.URL},
+				Author:  &feeds.Author{Name: it.By},
+				Created: time.Unix(int64(it.Added), 0),
+			}
+			if strings.TrimSpace(it.Text) != "" {
+				feedItem.Description = it.Text
+			} else if strings.TrimSpace(it.Descriprion) != "" {
+				feedItem.Description = it.Descriprion
+			} else {
+				feedItem.Description = ""
+			}
+			feedItems = append(feedItems, feedItem)
+		}
+
+		feed.Items = feedItems
+
+		switch feedType {
+		case "atom":
+			atom, err := feed.ToAtom()
+			if err != nil {
+				fmt.Fprintf(w, "%s", err)
+			}
+
+			w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+			fmt.Fprintf(w, "%s", atom)
+			return
+		case "rss":
+			rss, err := feed.ToRss()
+			if err != nil {
+				fmt.Fprintf(w, "%s", err)
+			}
+			w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+			fmt.Fprintf(w, "%s", rss)
+			return
+		default:
+			// json
+			j, err := feed.ToJSON()
+			if err != nil {
+				fmt.Fprintf(w, "%s", err)
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, "%s", j)
+			return
+		}
+	})))
+
 	http.Handle("/", r)
 
 	httpPort := os.Getenv("HTTP_PORT")
@@ -206,6 +257,23 @@ func main() {
 	}
 
 	log.Println(srv.ListenAndServe())
+}
+
+func withHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.URL.Path)
+		// log CF- headers
+		for h, v := range r.Header {
+			h = strings.ToUpper(h) // headers are case insensitive
+			if strings.HasPrefix(h, "CF-") {
+				log.Printf("%s : %s\n", strings.Replace(h, "CF-", "", -1), strings.Join(v, " "))
+			}
+		}
+		log.Println(realIP(r))
+		log.Println(r.UserAgent())
+
+		next.ServeHTTP(w, r)
+	}
 }
 
 func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {

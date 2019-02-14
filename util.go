@@ -1,8 +1,15 @@
 package main
 
 import (
+	"net"
+	"net/http"
 	"net/url"
 	"strings"
+)
+
+const (
+	headerXForwardedFor = "X-Forwarded-For"
+	headerXRealIP       = "X-Real-IP"
 )
 
 var r = strings.NewReplacer("http://", "", "https://", "", "www.", "", "www2.", "", "www3.", "")
@@ -52,4 +59,17 @@ func urlToDomain(link string) (string, error) {
 	}
 
 	return r.Replace(u.Hostname()), nil
+}
+
+func realIP(r *http.Request) string {
+	ra := r.RemoteAddr
+	if ip := r.Header.Get(headerXForwardedFor); ip != "" {
+		ra = strings.Split(ip, ", ")[0]
+	} else if ip := r.Header.Get(headerXRealIP); ip != "" {
+		ra = ip
+	} else {
+		ra, _, _ = net.SplitHostPort(ra)
+	}
+
+	return ra
 }
