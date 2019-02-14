@@ -256,7 +256,9 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		}
 		if !there {
 			olderItemsIDsNotInTop = append(olderItemsIDsNotInTop, it.ID)
-			tweetIDsFromOlderItemsToBeDeleted = append(tweetIDsFromOlderItemsToBeDeleted, it.TweetID)
+			if it.TweetID != 0 {
+				tweetIDsFromOlderItemsToBeDeleted = append(tweetIDsFromOlderItemsToBeDeleted, it.TweetID)
+			}
 		}
 	}
 	if len(olderItemsIDsNotInTop) > 0 {
