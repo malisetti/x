@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"strconv"
 
 	"net/http"
 	"strings"
@@ -209,6 +210,7 @@ func main() {
 			} else {
 				feedItem.Description = ""
 			}
+			feedItem.Id = strconv.Itoa(it.ID)
 			feedItems = append(feedItems, feedItem)
 		}
 
