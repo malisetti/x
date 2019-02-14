@@ -148,7 +148,7 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 			it.TweetID = tweetID.Int64
 		}
 		it.By = by.String
-		it.Textx = by.String
+		it.Textx = textx.String
 
 		items = append(items, &it)
 	}
