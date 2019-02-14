@@ -150,6 +150,18 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))))
 
 	r.Handle("/", middleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestedContentType := r.Header.Get("Content-Type")
+		if requestedContentType != "application/json" {
+			pusher, ok := w.(http.Pusher)
+			if ok {
+				// Push is supported. Try pushing rather than
+				// waiting for the browser request these static assets.
+				if err := pusher.Push("/static/style.css", nil); err != nil {
+					log.Printf("Failed to push: %v", err)
+				}
+			}
+		}
+
 		// log CF- headers
 		for h, v := range r.Header {
 			h = strings.ToUpper(h) // headers are case insensitive
@@ -174,7 +186,6 @@ func main() {
 			return
 		}
 
-		requestedContentType := r.Header.Get("Content-Type")
 		if requestedContentType == "application/json" {
 			w.Header().Set("Content-Type", "application/json")
 			err = json.NewEncoder(w).Encode(items)
