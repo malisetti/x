@@ -181,17 +181,17 @@ func main() {
 			return
 		}
 
-		smi := sitemap.NewSitemapIndex()
+		sm := sitemap.New()
 		for _, it := range items {
 			added := time.Unix(int64(it.Added), 0)
-			smi.Add(&sitemap.URL{
+			sm.Add(&sitemap.URL{
 				Loc:        it.URL,
 				LastMod:    &added,
 				ChangeFreq: sitemap.Hourly,
 			})
 		}
 
-		_, err = smi.WriteTo(w)
+		_, err = sm.WriteTo(w)
 		if err != nil {
 			log.Println(err)
 		}
