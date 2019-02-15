@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/snabb/sitemap"
 
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
@@ -133,10 +134,7 @@ func main() {
 		}
 	}()
 
-	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))))
-
-	r.Handle("/", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+	fetchItems := func() ([]*item, error) {
 		var ids []int
 		func() {
 			tstore.RLock()
@@ -144,8 +142,14 @@ func main() {
 			ids = tstore.currentTop30ItemIds
 		}()
 
-		items, err := fetchCurrentItems(db, ids)
+		return fetchCurrentItems(db, ids)
+	}
 
+	r := mux.NewRouter()
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))))
+
+	r.Handle("/", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+		items, err := fetchItems()
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -170,16 +174,31 @@ func main() {
 		}
 	}))).Methods(http.MethodGet)
 
+	r.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
+		items, err := fetchItems()
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+
+		smi := sitemap.NewSitemapIndex()
+		for _, it := range items {
+			added := time.Unix(int64(it.Added), 0)
+			smi.Add(&sitemap.URL{
+				Loc:        it.URL,
+				LastMod:    &added,
+				ChangeFreq: sitemap.Hourly,
+			})
+		}
+
+		_, err = smi.WriteTo(w)
+		if err != nil {
+			log.Println(err)
+		}
+	})
+
 	r.Handle("/feed/{type}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
-		var ids []int
-		func() {
-			tstore.RLock()
-			defer tstore.RUnlock()
-			ids = tstore.currentTop30ItemIds
-		}()
-
-		items, err := fetchCurrentItems(db, ids)
-
+		items, err := fetchItems()
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -415,6 +434,11 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 	}
 
 	_, err = insertOrReplaceItems(db, items)
+	if err != nil {
+		log.Println(err)
+	}
+
+	_, err = http.Get(fmt.Sprintf("https://www.google.com/ping?sitemap=%s", "https://www.8hrs.xyz/sitemap.xml"))
 	if err != nil {
 		log.Println(err)
 	}
