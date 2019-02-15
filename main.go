@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/snabb/sitemap"
 
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
@@ -173,29 +172,6 @@ func main() {
 			}()
 		}
 	}))).Methods(http.MethodGet)
-
-	r.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
-		items, err := fetchItems()
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-			return
-		}
-
-		sm := sitemap.New()
-		for _, it := range items {
-			added := time.Unix(int64(it.Added), 0)
-			sm.Add(&sitemap.URL{
-				Loc:        it.URL,
-				LastMod:    &added,
-				ChangeFreq: sitemap.Hourly,
-			})
-		}
-
-		_, err = sm.WriteTo(w)
-		if err != nil {
-			log.Println(err)
-		}
-	})
 
 	r.Handle("/feed/{type}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
@@ -434,11 +410,6 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 	}
 
 	_, err = insertOrReplaceItems(db, items)
-	if err != nil {
-		log.Println(err)
-	}
-
-	_, err = http.Get(fmt.Sprintf("https://www.google.com/ping?sitemap=%s", "https://www.8hrs.xyz/sitemap.xml"))
 	if err != nil {
 		log.Println(err)
 	}
