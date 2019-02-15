@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -18,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/snabb/sitemap"
 
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
@@ -42,6 +44,19 @@ type tempStore struct {
 var tstore tempStore
 
 func main() {
+	encKey := os.Getenv("ENC_KEY")
+	if encKey == "" {
+		panic("ENC_KEY should be set to a string")
+	}
+
+	keyBytes, err := hex.DecodeString(encKey)
+	if err != nil {
+		panic("ENC_KEY is not hex decodable")
+	}
+
+	key := [32]byte{}
+	copy(key[:], keyBytes)
+
 	readTemplate := func() error {
 		indexTemplatePath := os.Getenv("INDEX_TMPL_PATH")
 		tmpl := template.New("index.html")
@@ -52,10 +67,32 @@ func main() {
 		return err
 	}
 
-	err := readTemplate()
+	err = readTemplate()
 	if err != nil {
 		log.Println(err)
 		return
+	}
+
+	encAndHex := func(x string) (string, error) {
+		cipher, err := Encrypt([]byte(x), &key)
+		if err != nil {
+			return "", err
+		}
+
+		return hex.EncodeToString(cipher), nil
+	}
+
+	decFromHex := func(x string) (string, error) {
+		buf, err := hex.DecodeString(x)
+		if err != nil {
+			return "", err
+		}
+		plainTextBuf, err := Decrypt(buf, &key)
+		if err != nil {
+			return "", err
+		}
+
+		return string(plainTextBuf), nil
 	}
 
 	twAccessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
@@ -173,6 +210,34 @@ func main() {
 		}
 	}))).Methods(http.MethodGet)
 
+	r.Handle("/sitemap.xml", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+		items, err := fetchItems()
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+
+		sm := sitemap.New()
+		for _, it := range items {
+			added := time.Unix(int64(it.Added), 0)
+			h, err := encAndHex(it.URL)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			sm.Add(&sitemap.URL{
+				Loc:        fmt.Sprintf("https://www.8hrs.xyz/l/%s", h),
+				LastMod:    &added,
+				ChangeFreq: sitemap.Hourly,
+			})
+		}
+
+		_, err = sm.WriteTo(w)
+		if err != nil {
+			log.Println(err)
+		}
+	})))
+
 	r.Handle("/feed/{type}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
 		if err != nil {
@@ -240,6 +305,20 @@ func main() {
 			fmt.Fprintf(w, "%s", j)
 			return
 		}
+	})))
+
+	r.Handle("/l/{hash}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		h := vars["hash"]
+
+		link, err := decFromHex(h)
+		if err != nil {
+			log.Println(err)
+			http.NotFound(w, r)
+			return
+		}
+
+		http.Redirect(w, r, link, http.StatusSeeOther)
 	})))
 
 	http.Handle("/", r)
@@ -410,6 +489,11 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 	}
 
 	_, err = insertOrReplaceItems(db, items)
+	if err != nil {
+		log.Println(err)
+	}
+
+	_, err = http.Get(fmt.Sprintf("https://www.google.com/ping?sitemap=%s", "https://www.8hrs.xyz/sitemap.xml"))
 	if err != nil {
 		log.Println(err)
 	}

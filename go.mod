@@ -11,5 +11,6 @@ require (
 	github.com/gorilla/feeds v1.1.0
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/snabb/sitemap v1.0.0
 	github.com/ulule/limiter/v3 v3.1.0
 )
