@@ -52,6 +52,9 @@ func urlToDomain(link string) (string, error) {
 	}
 
 	parts := strings.Split(u.Hostname(), ".")
+	if len(parts[0]) > 4 {
+		return strings.Join(parts, "."), nil
+	}
 	if strings.HasPrefix(parts[0], "www") {
 		return strings.Join(parts[1:], "."), nil
 	}
