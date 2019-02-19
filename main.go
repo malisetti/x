@@ -321,6 +321,8 @@ func main() {
 		http.Redirect(w, r, link, http.StatusSeeOther)
 	})))
 
+	r.Handle("/robots.txt", rlMiddleware.Handler(withHeadersLogging(serveFile("./robots.txt"))))
+
 	http.Handle("/", r)
 
 	httpPort := os.Getenv("HTTP_PORT")
@@ -334,6 +336,12 @@ func main() {
 	}
 
 	log.Println(srv.ListenAndServe())
+}
+
+func serveFile(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, path)
+	}
 }
 
 func withHeadersLogging(next http.HandlerFunc) http.HandlerFunc {

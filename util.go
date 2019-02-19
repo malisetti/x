@@ -12,8 +12,6 @@ const (
 	headerXRealIP       = "X-Real-IP"
 )
 
-var r = strings.NewReplacer("http://", "", "https://", "", "www.", "", "www2.", "", "www3.", "")
-
 func intsToChan(itemIds []int) <-chan int {
 	ids := make(chan int)
 	go func() {
@@ -52,13 +50,13 @@ func urlToDomain(link string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	parts := strings.Split(u.Hostname(), ".")
-	if len(parts) >= 2 {
-		domain := parts[len(parts)-2] + "." + parts[len(parts)-1]
-		return domain, nil
+	if strings.HasPrefix(parts[0], "www") {
+		return strings.Join(parts[1:], "."), nil
 	}
 
-	return r.Replace(u.Hostname()), nil
+	return strings.Join(parts, "."), nil
 }
 
 func realIP(r *http.Request) string {
