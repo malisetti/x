@@ -321,7 +321,7 @@ func main() {
 		http.Redirect(w, r, link, http.StatusSeeOther)
 	})))
 
-	r.Handle("/robots.txt", rlMiddleware.Handler(withHeadersLogging(serveFile("./robots.txt"))))
+	r.Handle("/robots.txt", rlMiddleware.Handler(withHeadersLogging(serveFile(os.Getenv("ROBOTS_TXT")))))
 
 	http.Handle("/", r)
 
