@@ -44,23 +44,32 @@ type tempStore struct {
 var tstore tempStore
 
 func main() {
-	encKey := os.Getenv("ENC_KEY")
-	if encKey == "" {
-		panic("ENC_KEY should be set to a string")
+	var conf *config
+	configFilePath := os.Getenv("APP_CONFIG_PATH")
+	f, err := os.Open(configFilePath)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	dec := json.NewDecoder(f)
+	err = dec.Decode(&conf)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	keyBytes, err := hex.DecodeString(encKey)
+	keyBytes, err := hex.DecodeString(conf.EncryptKey)
 	if err != nil {
-		panic("ENC_KEY is not hex decodable")
+		log.Println("ENC_KEY is not hex decodable")
+		return
 	}
 
 	key := [32]byte{}
 	copy(key[:], keyBytes)
 
 	readTemplate := func() error {
-		indexTemplatePath := os.Getenv("INDEX_TMPL_PATH")
 		tmpl := template.New("index.html")
-		tmpl, err := tmpl.ParseFiles(indexTemplatePath)
+		tmpl, err := tmpl.ParseFiles(conf.IndexTemplatePath)
 		tstore.Lock()
 		defer tstore.Unlock()
 		tstore.tmpl = tmpl
@@ -95,20 +104,12 @@ func main() {
 		return string(plainTextBuf), nil
 	}
 
-	twAccessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
-	twAccessTokenSecret := os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
-	twConsumerAPIKey := os.Getenv("TWITTER_CONSUMER_API_KEY")
-	twConsumerSecretKey := os.Getenv("TWITTER_CONSUMER_SECRET_KEY")
-
-	if twAccessToken == "" || twAccessTokenSecret == "" || twConsumerAPIKey == "" || twConsumerSecretKey == "" {
-		log.Println("twitter tokens should be set in env")
-		return
+	var tapi *anaconda.TwitterApi
+	if conf.TweetItems {
+		tapi = anaconda.NewTwitterApiWithCredentials(conf.TwitterAccessToken, conf.TwitterAccessTokenSecret, conf.TwitterConsumerAPIKey, conf.TwitterConsumerSecretKey)
 	}
 
-	tapi := anaconda.NewTwitterApiWithCredentials(twAccessToken, twAccessTokenSecret, twConsumerAPIKey, twConsumerSecretKey)
-
-	dbPath := os.Getenv("APP_DB_PATH")
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite3", conf.AppDatabasePath)
 	if err != nil {
 		log.Println(err)
 		return
@@ -117,8 +118,7 @@ func main() {
 	defer db.Close()
 
 	store := sim.NewStore()
-	// Define a limit rate to 5 requests per minute.
-	rate, err := limiter.NewRateFromFormatted("10-M")
+	rate, err := limiter.NewRateFromFormatted(conf.RateLimit)
 	if err != nil {
 		log.Println(err)
 		return
@@ -141,7 +141,7 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go flow(ctx, db, tapi)
+	go flow(ctx, db, conf, tapi)
 
 	go func() {
 		sixMinTicker := time.NewTicker(6 * time.Minute)
@@ -150,7 +150,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-sixMinTicker.C:
-				flow(ctx, db, tapi)
+				flow(ctx, db, conf, tapi)
 			}
 		}
 	}()
@@ -182,7 +182,7 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR")))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
 
 	r.Handle("/", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
@@ -321,16 +321,12 @@ func main() {
 		http.Redirect(w, r, link, http.StatusSeeOther)
 	})))
 
-	r.Handle("/robots.txt", rlMiddleware.Handler(withHeadersLogging(serveFile(os.Getenv("ROBOTS_TXT")))))
+	r.Handle("/robots.txt", rlMiddleware.Handler(withHeadersLogging(serveFile(conf.RobotsTextFilePath))))
 
 	http.Handle("/", r)
 
-	httpPort := os.Getenv("HTTP_PORT")
-	if httpPort == "" {
-		httpPort = port
-	}
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%s", httpPort),
+		Addr:         fmt.Sprintf(":%s", conf.HTTPPort),
 		ReadTimeout:  2 * time.Second,
 		WriteTimeout: 2 * time.Second,
 	}
@@ -361,7 +357,7 @@ func withHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
+func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterApi) {
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
@@ -410,9 +406,11 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 			log.Println(err)
 		}
 
-		errs := deleteTweets(tctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
-		for id, err := range errs {
-			log.Printf("%d tweet deletion failed with %s\n", id, err)
+		if conf.TweetItems {
+			errs := deleteTweets(tctx, tapi, tweetIDsFromOlderItemsToBeDeleted)
+			for id, err := range errs {
+				log.Printf("%d tweet deletion failed with %s\n", id, err)
+			}
 		}
 	}
 
@@ -491,9 +489,11 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		log.Println(err)
 	}
 
-	errs := tweetItems(tctx, tapi, items)
-	for id, err := range errs {
-		log.Printf("%d tweeting failed with %s\n", id, err)
+	if conf.TweetItems {
+		errs := tweetItems(tctx, tapi, items)
+		for id, err := range errs {
+			log.Printf("%d tweeting failed with %s\n", id, err)
+		}
 	}
 
 	_, err = insertOrReplaceItems(db, items)
@@ -501,8 +501,10 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		log.Println(err)
 	}
 
-	_, err = http.Get(fmt.Sprintf("https://www.google.com/ping?sitemap=%s", "https://www.8hrs.xyz/sitemap.xml"))
-	if err != nil {
-		log.Println(err)
+	if conf.PingGoogle {
+		_, err = http.Get(fmt.Sprintf("https://www.google.com/ping?sitemap=%s", "https://www.8hrs.xyz/sitemap.xml"))
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }

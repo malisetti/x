@@ -1,0 +1,15 @@
+{
+    "HTTPPort": "8080",
+    "encKey": "52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649",
+    "indexTemplatePath": "/home/seshachalamm/x/index.html",
+    "appDatabasePath": "/home/seshachalamm/x/app.db",
+    "staticResourcesDirPath": "/home/seshachalamm/x/static/",
+    "robotsTxtPath": "/home/seshachalamm/x/robots.txt",
+    "rateLimit": "5-M",
+    "tweetItems": false,
+    "pingGoogle": false,
+    "twitterAccessToken": "",
+    "twitterAccessTokenSecret": "",
+    "twitterConsumerAPIKey": "",
+    "twitterConsumerSecretKey": ""
+}
