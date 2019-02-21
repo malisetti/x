@@ -486,10 +486,10 @@ func flow(ctx context.Context, db *sql.DB, tapi *anaconda.TwitterApi) {
 		}
 	}
 
-	//err = populateItemsWithPreview(items)
-	//if err != nil {
-	//	log.Println(err)
-	//}
+	err = populateItemsWithPreview(items)
+	if err != nil {
+		log.Println(err)
+	}
 
 	errs := tweetItems(tctx, tapi, items)
 	for id, err := range errs {
