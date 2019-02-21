@@ -8,17 +8,9 @@ build.sh builds with version as the latest git commit hash.
 
 sqlitedb is needed. create a database file before running the app.
 
-configuration that is required to run the executable are passed as env vars and listed in  x8h.service
+configuration that is required to run the executable are passed as env vars and listed in  x.service.
 
-* INDEX_TMPL_PATH=/home/abbiya/index.html // path to html file
-* APP_DB_PATH=/home/abbiya/app.db // path to sqlite db
-* STATIC_DIR=/home/abbiya/static // static dir to place favicons and other resources
-* HTTP_PORT=80 // port to run http server on
-* TWITTER_ACCESS_TOKEN=
-* TWITTER_ACCESS_TOKEN_SECRET=
-* TWITTER_CONSUMER_API_KEY=
-* TWITTER_CONSUMER_SECRET_KEY=
-
+modify the config.json as required.
 
 there is one http endpoint.
 
