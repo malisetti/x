@@ -184,7 +184,7 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
 
-	r.Handle("/", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
@@ -210,7 +210,7 @@ func main() {
 		}
 	}))).Methods(http.MethodGet)
 
-	r.Handle("/sitemap.xml", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/sitemap.xml", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
@@ -238,7 +238,7 @@ func main() {
 		}
 	})))
 
-	r.Handle("/feed/{type}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/feed/{type}", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
@@ -307,7 +307,7 @@ func main() {
 		}
 	})))
 
-	r.Handle("/l/{hash}", rlMiddleware.Handler(withHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/l/{hash}", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		h := vars["hash"]
 
@@ -321,7 +321,7 @@ func main() {
 		http.Redirect(w, r, link, http.StatusSeeOther)
 	})))
 
-	r.Handle("/robots.txt", rlMiddleware.Handler(withHeadersLogging(serveFile(conf.RobotsTextFilePath))))
+	r.Handle("/robots.txt", rlMiddleware.Handler(withRequestHeadersLogging(serveFile(conf.RobotsTextFilePath))))
 
 	http.Handle("/", r)
 
@@ -340,18 +340,16 @@ func serveFile(path string) http.HandlerFunc {
 	}
 }
 
-func withHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
+func withRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.URL.Path)
-		// log CF- headers
+		log.Printf("Visiting : %s with method %s\n", r.URL.Path, r.Method)
 		for h, v := range r.Header {
-			h = strings.ToUpper(h) // headers are case insensitive
-			if strings.HasPrefix(h, "CF-") {
-				log.Printf("%s : %s\n", strings.Replace(h, "CF-", "", -1), strings.Join(v, " "))
-			}
+			log.Printf("%s : %s\n", h, strings.Join(v, " "))
 		}
-		log.Println(realIP(r))
-		log.Println(r.UserAgent())
+		ip := realIP(r)
+		if ip != "" {
+			log.Printf("Real IP : %s\n", ip)
+		}
 
 		next.ServeHTTP(w, r)
 	}
