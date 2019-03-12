@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html"
 	"log"
 	"strings"
 	"time"
@@ -142,7 +141,7 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 			it.Deleted = true
 		}
 
-		it.Descriprion = description.String
+		it.Description = description.String
 
 		if tweetID.Valid {
 			it.TweetID = tweetID.Int64
@@ -157,30 +156,32 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 }
 
 func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
-	var valueArgs []string
+	var valueArgs []interface{}
 
 	// id, title, url, deleted, dead, discussLink, added, domain, description, tweetID, by, textx
-	valueArgsTmpl := "(%d, \"%s\", \"%s\", %d, %d, \"%s\", %s, \"%s\", \"%s\", %d, \"%s\", \"%s\")"
+	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx) VALUES "
 	now := time.Now().Unix()
 	for _, it := range items {
 		added := fmt.Sprintf("COALESCE((SELECT added FROM items WHERE id = %d), %d)", it.ID, now)
+		sqlStr += "(?, ?, ?, ?, ?, ?, " + added + ", ?, ?, ?, ?, ?),"
 
-		var deleted int
+		deleted := 0
+		dead := 0
 		if it.Deleted {
 			deleted = 1
 		}
-		var dead int
 		if it.Dead {
 			dead = 1
 		}
 
-		textx := html.EscapeString(it.Textx)
-		description := html.EscapeString(it.Descriprion)
-
-		v := fmt.Sprintf(valueArgsTmpl, it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, added, it.Domain, description, it.TweetID, it.By, textx)
-		valueArgs = append(valueArgs, v)
+		valueArgs = append(valueArgs, it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.Domain, it.Description, it.TweetID, it.By, it.Textx)
 	}
-	stmt := fmt.Sprintf(`INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx) VALUES %s`, strings.Join(valueArgs, ","))
+	sqlStr = strings.TrimSuffix(sqlStr, ",")
 
-	return db.Exec(stmt)
+	stmt, err := db.Prepare(sqlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return stmt.Exec(valueArgs...)
 }

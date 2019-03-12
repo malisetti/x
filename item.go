@@ -15,6 +15,6 @@ type item struct {
 	Added       int    `json:"added"`
 	Domain      string `json:"domain"`
 
-	Descriprion string `json:"description"`
+	Description string `json:"description"`
 	TweetID     int64  `json:"-"`
 }

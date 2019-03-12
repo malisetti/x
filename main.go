@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"html"
 	"html/template"
 	"log"
 	"os"
@@ -263,10 +262,10 @@ func main() {
 				Author:  &feeds.Author{Name: it.By},
 				Created: time.Unix(int64(it.Added), 0),
 			}
-			if strings.TrimSpace(it.Descriprion) != "" {
-				feedItem.Description = html.UnescapeString(it.Descriprion)
+			if strings.TrimSpace(it.Description) != "" {
+				feedItem.Description = it.Description
 			} else if strings.TrimSpace(it.Textx) != "" {
-				feedItem.Description = html.UnescapeString(it.Textx)
+				feedItem.Description = it.Textx
 			} else {
 				feedItem.Description = ""
 			}
@@ -435,7 +434,7 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 
 	updatedItems, err := fetchHNStoriesOf(ctx, olderItemsIDsInTop)
 	if err != nil {
-		log.Println()
+		log.Println(err)
 	}
 
 	for _, updatedItem := range updatedItems {
@@ -467,7 +466,7 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 			}
 
 			it.TweetID = eit.TweetID
-			it.Descriprion = eit.Descriprion
+			it.Description = eit.Description
 
 			break
 		}
