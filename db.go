@@ -182,6 +182,7 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	return stmt.Exec(valueArgs...)
 }
