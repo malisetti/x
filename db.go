@@ -155,16 +155,23 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 	return items, nil
 }
 
-func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
-	var valueArgs []interface{}
-
+func insertOrReplaceItems(db *sql.DB, items []*item) error {
 	// id, title, url, deleted, dead, discussLink, added, domain, description, tweetID, by, textx
-	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx) VALUES "
+	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?)"
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare(sqlStr)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
 	now := time.Now().Unix()
 	for _, it := range items {
-		added := fmt.Sprintf("COALESCE((SELECT added FROM items WHERE id = %d), %d)", it.ID, now)
-		sqlStr += "(?, ?, ?, ?, ?, ?, " + added + ", ?, ?, ?, ?, ?),"
-
 		deleted := 0
 		dead := 0
 		if it.Deleted {
@@ -174,15 +181,16 @@ func insertOrReplaceItems(db *sql.DB, items []*item) (sql.Result, error) {
 			dead = 1
 		}
 
-		valueArgs = append(valueArgs, it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.Domain, it.Description, it.TweetID, it.By, it.Textx)
+		_, err := stmt.Exec(it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.ID, now, it.Domain, it.Description, it.TweetID, it.By, it.Textx)
+		if err != nil {
+			return err
+		}
 	}
-	sqlStr = strings.TrimSuffix(sqlStr, ",")
 
-	stmt, err := db.Prepare(sqlStr)
+	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer stmt.Close()
 
-	return stmt.Exec(valueArgs...)
+	return nil
 }

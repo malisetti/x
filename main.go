@@ -497,7 +497,7 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 		}
 	}
 
-	_, err = insertOrReplaceItems(db, items)
+	err = insertOrReplaceItems(db, items)
 	if err != nil {
 		log.Println(err)
 	}
