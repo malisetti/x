@@ -5,9 +5,32 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"io"
 )
+
+func encAndHex(x string, key *[32]byte) (string, error) {
+	cipher, err := Encrypt([]byte(x), key)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(cipher), nil
+}
+
+func decFromHex(x string, key *[32]byte) (string, error) {
+	buf, err := hex.DecodeString(x)
+	if err != nil {
+		return "", err
+	}
+	plainTextBuf, err := Decrypt(buf, key)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plainTextBuf), nil
+}
 
 // NewEncryptionKey generates a random 256-bit key for Encrypt() and
 // Decrypt(). It panics if the source of randomness fails.

@@ -29,11 +29,7 @@ func tweetItems(ctx context.Context, tapi *anaconda.TwitterApi, items []*item) m
 					continue
 				}
 
-				link := it.URL
-				if link == "" {
-					link = it.DiscussLink
-				}
-				status := fmt.Sprintf(tweetStatus, it.Title, link)
+				status := fmt.Sprintf(tweetStatus, it.Title, it.EncryptedURL)
 				status = hnReplacer.Replace(status)
 				status = strings.TrimSpace(status)
 				tweet, err := tapi.PostTweet(status, nil)

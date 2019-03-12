@@ -81,28 +81,6 @@ func main() {
 		return
 	}
 
-	encAndHex := func(x string) (string, error) {
-		cipher, err := Encrypt([]byte(x), &key)
-		if err != nil {
-			return "", err
-		}
-
-		return hex.EncodeToString(cipher), nil
-	}
-
-	decFromHex := func(x string) (string, error) {
-		buf, err := hex.DecodeString(x)
-		if err != nil {
-			return "", err
-		}
-		plainTextBuf, err := Decrypt(buf, &key)
-		if err != nil {
-			return "", err
-		}
-
-		return string(plainTextBuf), nil
-	}
-
 	var tapi *anaconda.TwitterApi
 	if conf.TweetItems {
 		tapi = anaconda.NewTwitterApiWithCredentials(conf.TwitterAccessToken, conf.TwitterAccessTokenSecret, conf.TwitterConsumerAPIKey, conf.TwitterConsumerSecretKey)
@@ -140,7 +118,7 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go flow(ctx, db, conf, tapi)
+	go flow(ctx, db, conf, tapi, &key)
 
 	go func() {
 		sixMinTicker := time.NewTicker(6 * time.Minute)
@@ -149,7 +127,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-sixMinTicker.C:
-				flow(ctx, db, conf, tapi)
+				flow(ctx, db, conf, tapi, &key)
 			}
 		}
 	}()
@@ -219,7 +197,7 @@ func main() {
 		sm := sitemap.New()
 		for _, it := range items {
 			added := time.Unix(int64(it.Added), 0)
-			h, err := encAndHex(it.URL)
+			h, err := encAndHex(it.URL, &key)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -310,7 +288,7 @@ func main() {
 		vars := mux.Vars(r)
 		h := vars["hash"]
 
-		link, err := decFromHex(h)
+		link, err := decFromHex(h, &key)
 		if err != nil {
 			log.Println(err)
 			http.NotFound(w, r)
@@ -356,7 +334,7 @@ func withRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterApi) {
+func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterApi, key *[32]byte) {
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
@@ -481,6 +459,12 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 		if err == nil {
 			it.Domain = domain
 		}
+		link := it.URL
+		if link == "" {
+			link = it.DiscussLink
+		}
+		h, _ := encAndHex(link, key)
+		it.EncryptedURL = fmt.Sprintf("https://www.8hrs.xyz/l/%s", h)
 	}
 
 	if conf.FetchPreviews {
