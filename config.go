@@ -6,12 +6,14 @@ type config struct {
 	IndexTemplatePath            string `json:"indexTemplatePath"`
 	AppDatabasePath              string `json:"appDatabasePath"`
 	StaticResourcesDirectoryPath string `json:"staticResourcesDirPath"`
-	RobotsTextFilePath           string `json:"robotsTxtPath"`
 
-	RateLimit string `json:"rateLimit"`
+	RateLimit          string `json:"rateLimit"`
+	RobotsTextFilePath string `json:"robotsTxtPath"`
 
-	TweetItems bool `json:"tweetItems"`
-	PingGoogle bool `json:"pingGoogle"`
+	HaveRobotsTxt bool `json:"haveRobotsTxt"`
+	TweetItems    bool `json:"tweetItems"`
+	PingGoogle    bool `json:"pingGoogle"`
+	FetchPreviews bool `json:"fetchPreviews"`
 
 	TwitterAccessToken       string `json:"twitterAccessToken"`
 	TwitterAccessTokenSecret string `json:"twitterAccessTokenSecret"`

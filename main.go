@@ -321,7 +321,9 @@ func main() {
 		http.Redirect(w, r, link, http.StatusSeeOther)
 	})))
 
-	r.Handle("/robots.txt", rlMiddleware.Handler(withRequestHeadersLogging(serveFile(conf.RobotsTextFilePath))))
+	if conf.HaveRobotsTxt {
+		r.Handle("/robots.txt", rlMiddleware.Handler(withRequestHeadersLogging(serveFile(conf.RobotsTextFilePath))))
+	}
 
 	http.Handle("/", r)
 
@@ -482,9 +484,11 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 		}
 	}
 
-	err = populateItemsWithPreview(items)
-	if err != nil {
-		log.Println(err)
+	if conf.FetchPreviews {
+		err = populateItemsWithPreview(items)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	if conf.TweetItems {

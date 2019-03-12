@@ -8,6 +8,8 @@
     "rateLimit": "5-M",
     "tweetItems": false,
     "pingGoogle": false,
+    "fetchPreviews": false,
+    "haveRobotsTxt": false,
     "twitterAccessToken": "",
     "twitterAccessTokenSecret": "",
     "twitterConsumerAPIKey": "",
