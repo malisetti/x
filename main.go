@@ -118,7 +118,7 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go flow(ctx, db, conf, tapi, &key)
+	// go flow(ctx, db, conf, tapi, &key)
 
 	go func() {
 		sixMinTicker := time.NewTicker(6 * time.Minute)
