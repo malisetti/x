@@ -52,11 +52,11 @@
               <s>
             {{ end }}
                 {{ if eq $item.URL "" }}
-                <a class="readable" target="_blank" href="{{ $item.DiscussLink }}">{{ $item.Title }}</a>
+                <a class="readable" target="_blank" href="{{ $item.DiscussLink }}" ping="/l/{{ $item.EncryptedDiscussLink }}">{{ $item.Title }}</a>
                 {{ else }}
-                <a class="readable" target="_blank" href="{{ $item.URL }}">{{ $item.Title }} <span class="domain">({{ $item.Domain }})</span></a> 
+                <a class="readable" target="_blank" href="{{ $item.URL }}" ping="/l/{{ $item.EncryptedURL }}">{{ $item.Title }} <span class="domain">({{ $item.Domain }})</span></a>
                 {{ if ne $item.DiscussLink "" }}
-                <a class="readable" target="_blank" href="{{ $item.DiscussLink }}"><i class="discuss">discuss</i></a>
+                <a class="readable" target="_blank" href="{{ $item.DiscussLink }}" ping="/l/{{ $item.EncryptedDiscussLink }}"><i class="discuss">discuss</i></a>
                 {{ end }}
                 {{ end }}
             {{ if $item.Deleted }}

@@ -8,11 +8,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/badoux/goscraper"
 )
 
 const (
@@ -135,40 +132,4 @@ func fetchTopHNStories(ctx context.Context, limit int) ([]int, error) {
 	}
 
 	return ids[:limit], nil
-}
-
-func populateItemsWithPreview(items []*item) error {
-	itemsChan := itemsToChan(items)
-	var wg sync.WaitGroup
-	for i := 0; i < 4; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for it := range itemsChan {
-				if strings.TrimSpace(it.Description) != "" {
-					continue
-				}
-				preview, err := fetchPreview(it.URL)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-
-				it.Description = preview.Description
-			}
-		}()
-	}
-
-	wg.Wait()
-
-	return nil
-}
-
-func fetchPreview(link string) (*goscraper.DocumentPreview, error) {
-	s, err := goscraper.Scrape(link, 1)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s.Preview, err
 }

@@ -29,7 +29,8 @@ func tweetItems(ctx context.Context, tapi *anaconda.TwitterApi, items []*item) m
 					continue
 				}
 
-				status := fmt.Sprintf(tweetStatus, it.Title, it.EncryptedURL)
+				link := fmt.Sprintf("https://www.8hrs.xyz/l/%s", it.EncryptedURL)
+				status := fmt.Sprintf(tweetStatus, it.Title, link)
 				status = hnReplacer.Replace(status)
 				status = strings.TrimSpace(status)
 				tweet, err := tapi.PostTweet(status, nil)

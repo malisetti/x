@@ -107,7 +107,7 @@ func main() {
 		return
 	}
 
-	errs := updateItemsTable(db, addByColumn, addTextxColumn, addDescColumn, addTweetIDColumn)
+	errs := updateItemsTable(db, addByColumn, addTextxColumn, addDescColumn, addTweetIDColumn, addEncLink, addEncDiscussLink)
 	for _, err = range errs {
 		log.Println(err)
 	}
@@ -218,7 +218,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-	})))
+	}))).Methods(http.MethodGet)
 
 	r.Handle("/feed/{type}", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		items, err := fetchItems()
@@ -287,7 +287,7 @@ func main() {
 			fmt.Fprintf(w, "%s", j)
 			return
 		}
-	})))
+	}))).Methods(http.MethodGet)
 
 	r.Handle("/l/{hash}", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -296,15 +296,24 @@ func main() {
 		link, err := decFromHex(h, &key)
 		if err != nil {
 			log.Println(err)
-			http.NotFound(w, r)
+			if r.Method == http.MethodGet {
+				http.NotFound(w, r)
+				return
+			}
+		}
+
+		if r.Method == http.MethodPost {
+			log.Println(link)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
+		log.Println(link)
 		http.Redirect(w, r, link, http.StatusSeeOther)
-	})))
+	}))).Methods(http.MethodGet, http.MethodPost)
 
 	if conf.HaveRobotsTxt {
-		r.Handle("/robots.txt", rlMiddleware.Handler(withRequestHeadersLogging(serveFile(conf.RobotsTextFilePath))))
+		r.Handle("/robots.txt", rlMiddleware.Handler(withRequestHeadersLogging(serveFile(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
 	}
 
 	http.Handle("/", r)
@@ -466,14 +475,10 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 			link = it.DiscussLink
 		}
 		h, _ := encAndHex(link, key)
-		it.EncryptedURL = fmt.Sprintf("https://www.8hrs.xyz/l/%s", h)
-	}
+		it.EncryptedURL = h
 
-	if conf.FetchPreviews {
-		err = populateItemsWithPreview(items)
-		if err != nil {
-			log.Println(err)
-		}
+		h, _ = encAndHex(it.DiscussLink, key)
+		it.EncryptedDiscussLink = h
 	}
 
 	if conf.TweetItems {
