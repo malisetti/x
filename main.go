@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 
@@ -33,6 +34,8 @@ const (
 	port     = "8080"
 	eightHrs = 8 * 60 * 60 * time.Second
 )
+
+var bgColors = []string{"aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "blanchedalmond", "burlywood", "chartreuse"}
 
 type tempStore struct {
 	sync.RWMutex
@@ -181,10 +184,15 @@ func main() {
 				log.Println(err)
 			}
 		} else {
+			rand.Seed(time.Now().Unix())
+			bgColor := bgColors[rand.Intn(len(bgColors))]
 			func() {
 				tstore.RLock()
 				defer tstore.RUnlock()
-				err = tstore.tmpl.Execute(w, items)
+				data := make(map[string]interface{})
+				data["bgColor"] = bgColor
+				data["items"] = items
+				err = tstore.tmpl.Execute(w, data)
 				if err != nil {
 					log.Println(err)
 				}
