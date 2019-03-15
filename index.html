@@ -13,9 +13,10 @@
   </script>
 
   <script type="text/javascript">
+    const bgColors = ['aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige', 'bisque', 'blanchedalmond', 'burlywood','chartreuse'];
+    const bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
     window.onload = function() {
-      const bgColors = ['aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige', 'bisque', 'blanchedalmond', 'burlywood','chartreuse'];
-      document.body.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+      document.body.style.backgroundColor = bgColor;
     };
   </script>
 
