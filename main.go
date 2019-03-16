@@ -41,6 +41,7 @@ type tempStore struct {
 	sync.RWMutex
 	currentTop30ItemIds []int
 	tmpl                *template.Template
+	bgColor             string
 }
 
 var tstore tempStore
@@ -148,6 +149,8 @@ func main() {
 				return
 			case <-eightHrsTicker.C:
 				err := readTemplate()
+				rand.Seed(time.Now().Unix())
+				tstore.bgColor = bgColors[rand.Intn(len(bgColors))]
 				if err != nil {
 					log.Println(err)
 				}
@@ -155,7 +158,7 @@ func main() {
 		}
 	}()
 
-	fetchItems := func() ([]*item, error) {
+	fetchItems := func(since time.Time) ([]*item, error) {
 		var ids []int
 		func() {
 			tstore.RLock()
@@ -163,14 +166,24 @@ func main() {
 			ids = tstore.currentTop30ItemIds
 		}()
 
-		return fetchCurrentItems(db, ids)
+		return fetchCurrentItems(db, since, ids)
 	}
 
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
 
 	r.Handle("/", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
-		items, err := fetchItems()
+		t, err := strconv.Atoi(r.URL.Query().Get("t"))
+		var since time.Time
+		if err != nil || t <= 8 {
+			since = time.Now().Add(-1 * eightHrs)
+		} else if t > 8 && t <= 16 {
+			since = time.Now().Add(-2 * eightHrs)
+		} else {
+			since = time.Now().Add(-3 * eightHrs)
+		}
+
+		items, err := fetchItems(since)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -184,13 +197,11 @@ func main() {
 				log.Println(err)
 			}
 		} else {
-			rand.Seed(time.Now().Unix())
-			bgColor := bgColors[rand.Intn(len(bgColors))]
 			func() {
 				tstore.RLock()
 				defer tstore.RUnlock()
 				data := make(map[string]interface{})
-				data["bgColor"] = bgColor
+				data["bgColor"] = tstore.bgColor
 				data["items"] = items
 				err = tstore.tmpl.Execute(w, data)
 				if err != nil {
@@ -201,7 +212,8 @@ func main() {
 	}))).Methods(http.MethodGet)
 
 	r.Handle("/sitemap.xml", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
-		items, err := fetchItems()
+		eightHrsBack := time.Now().Add(-eightHrs)
+		items, err := fetchItems(eightHrsBack)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -229,7 +241,8 @@ func main() {
 	}))).Methods(http.MethodGet)
 
 	r.Handle("/feed/{type}", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
-		items, err := fetchItems()
+		eightHrsBack := time.Now().Add(-eightHrs)
+		items, err := fetchItems(eightHrsBack)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -295,7 +308,7 @@ func main() {
 			fmt.Fprintf(w, "%s", j)
 			return
 		}
-	}))).Methods(http.MethodGet)
+	}))).Queries().Methods(http.MethodGet)
 
 	r.Handle("/l/{hash}", rlMiddleware.Handler(withRequestHeadersLogging(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -373,26 +386,26 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 		log.Println(err)
 	}
 
-	sixteenHrsBack := time.Now().Add(-2 * eightHrs)
+	thirtyTwoHrsBack := time.Now().Add(-4 * eightHrs)
 
-	resultItems, err := selectItemsBefore(db, sixteenHrsBack.Unix())
+	idAndTweetIDs, err := selectItemsIDsBefore(db, thirtyTwoHrsBack.Unix())
 	if err != nil {
 		log.Println(err)
 	}
 	var olderItemsIDsNotInTop []int
 	var tweetIDsFromOlderItemsToBeDeleted []int64
-	for _, it := range resultItems {
+	for id, tid := range idAndTweetIDs {
 		there := false
 		for _, topIt := range items {
-			if it.ID == topIt.ID {
+			if id == topIt.ID {
 				there = true
 				break
 			}
 		}
 		if !there {
-			olderItemsIDsNotInTop = append(olderItemsIDsNotInTop, it.ID)
-			if it.TweetID != 0 {
-				tweetIDsFromOlderItemsToBeDeleted = append(tweetIDsFromOlderItemsToBeDeleted, it.TweetID)
+			olderItemsIDsNotInTop = append(olderItemsIDsNotInTop, id)
+			if tid != 0 {
+				tweetIDsFromOlderItemsToBeDeleted = append(tweetIDsFromOlderItemsToBeDeleted, tid)
 			}
 		}
 	}
@@ -411,21 +424,21 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 	}
 
 	eightHrsBack := time.Now().Add(-1 * eightHrs)
-	resultItems, err = selectItemsAfter(db, eightHrsBack.Unix())
+	itemsIDsFromLastEightHrs, err := selectItemsIDsAfter(db, eightHrsBack.Unix())
 	if err != nil {
 		log.Println(err)
 	}
 	var olderItemsIDsInTop []int
-	for _, it := range resultItems {
+	for _, id := range itemsIDsFromLastEightHrs {
 		there := false
 		for _, topIt := range items {
-			if it.ID == topIt.ID {
+			if id == topIt.ID {
 				there = true
 				break
 			}
 		}
 		if there {
-			olderItemsIDsInTop = append(olderItemsIDsInTop, it.ID)
+			olderItemsIDsInTop = append(olderItemsIDsInTop, id)
 		}
 	}
 
@@ -452,7 +465,7 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 		itemIDs = append(itemIDs, it.ID)
 	}
 
-	existingItems, err := selectItemsByIDsAsc(db, itemIDs)
+	existingItems, err := selectExistingPropsOfItemsByIDsAsc(db, itemIDs)
 	if err != nil {
 		log.Println(err)
 	}
@@ -462,8 +475,13 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 				continue
 			}
 
+			it.URL = eit.URL
+			it.DiscussLink = eit.DiscussLink
+			it.Domain = eit.Domain
 			it.TweetID = eit.TweetID
 			it.Description = eit.Description
+			it.EncryptedURL = eit.EncryptedURL
+			it.EncryptedDiscussLink = eit.EncryptedDiscussLink
 
 			break
 		}
@@ -473,20 +491,27 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 		if it.URL == "" {
 			it.URL = fmt.Sprintf(hnPostLinkURL, it.ID)
 		}
-		it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
-		domain, err := urlToDomain(it.URL)
-		if err == nil {
-			it.Domain = domain
+		if it.DiscussLink == "" {
+			it.DiscussLink = fmt.Sprintf(hnPostLinkURL, it.ID)
 		}
-		link := it.URL
-		if link == "" {
-			link = it.DiscussLink
+		if it.Domain == "" {
+			domain, err := urlToDomain(it.URL)
+			if err == nil {
+				it.Domain = domain
+			}
 		}
-		h, _ := encAndHex(link, key)
-		it.EncryptedURL = h
-
-		h, _ = encAndHex(it.DiscussLink, key)
-		it.EncryptedDiscussLink = h
+		if it.EncryptedURL == "" {
+			link := it.URL
+			if link == "" {
+				link = it.DiscussLink
+			}
+			h, _ := encAndHex(link, key)
+			it.EncryptedURL = h
+		}
+		if it.EncryptedDiscussLink == "" {
+			h, _ := encAndHex(it.DiscussLink, key)
+			it.EncryptedDiscussLink = h
+		}
 	}
 
 	if conf.TweetItems {

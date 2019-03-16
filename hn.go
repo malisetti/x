@@ -18,9 +18,8 @@ const (
 	hnPostLinkURL = "https://news.ycombinator.com/item?id=%d"
 )
 
-func fetchCurrentItems(db *sql.DB, ids []int) ([]*item, error) {
-	eightHrsBack := time.Now().Add(-eightHrs)
-	oIds, err := selectItemsIdsBefore(db, eightHrsBack.Unix())
+func fetchCurrentItems(db *sql.DB, since time.Time, ids []int) ([]*item, error) {
+	oIds, err := selectItemsIdsBefore(db, since.Unix())
 	if err != nil {
 		return nil, err
 	}

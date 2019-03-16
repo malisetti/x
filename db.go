@@ -78,6 +78,31 @@ func selectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 	return ids, nil
 }
 
+func selectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
+	stmt := `SELECT id FROM items WHERE added >= %d`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		ids = append(ids, id)
+	}
+
+	return ids, nil
+}
+
 func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
@@ -85,11 +110,85 @@ func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
 	return execStmtAndGetItems(db, stmt)
 }
 
+func selectItemsIDsBefore(db *sql.DB, t int64) (map[int]int64, error) {
+	stmt := `SELECT id, tweetID FROM items WHERE added <= %d`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	ids := make(map[int]int64)
+	for rows.Next() {
+		var id int
+		var tweetID int64
+		var nullInt64 sql.NullInt64
+		err := rows.Scan(&id, &nullInt64)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		if nullInt64.Valid {
+			tweetID = nullInt64.Int64
+		}
+
+		ids[id] = tweetID
+	}
+
+	return ids, nil
+}
+
 func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	return execStmtAndGetItems(db, stmt)
+}
+
+func selectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
+	var idsStr []string
+	for _, id := range ids {
+		idsStr = append(idsStr, fmt.Sprintf("%d", id))
+	}
+	stmt := `SELECT id, link, discussLink, domain, description, tweetID, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var items []*item
+	for rows.Next() {
+		var it item
+		var description, encryptedURL, encryptedDiscussLink sql.NullString
+		var tweetID sql.NullInt64
+		err := rows.Scan(&it.ID,
+			&it.URL, &it.DiscussLink,
+			&it.Domain, &description, &tweetID,
+			&encryptedURL, &encryptedDiscussLink,
+		)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		it.Description = description.String
+
+		if tweetID.Valid {
+			it.TweetID = tweetID.Int64
+		}
+
+		it.EncryptedURL = encryptedURL.String
+		it.EncryptedDiscussLink = encryptedDiscussLink.String
+
+		items = append(items, &it)
+	}
+
+	return items, nil
 }
 
 func selectItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
