@@ -9,7 +9,7 @@ import (
 	"github.com/ChimeraCoder/anaconda"
 )
 
-const tweetStatus = "%s\n%s"
+const tweetStatus = "%s\t(%s)\n%s"
 
 var hnReplacer = strings.NewReplacer("Show HN:", "", "Ask HN:", "")
 
@@ -30,7 +30,7 @@ func tweetItems(ctx context.Context, tapi *anaconda.TwitterApi, items []*item) m
 				}
 
 				link := fmt.Sprintf("https://www.8hrs.xyz/l/%s", it.EncryptedURL)
-				status := fmt.Sprintf(tweetStatus, it.Title, link)
+				status := fmt.Sprintf(tweetStatus, it.Title, it.Domain, link)
 				status = hnReplacer.Replace(status)
 				status = strings.TrimSpace(status)
 				tweet, err := tapi.PostTweet(status, nil)
