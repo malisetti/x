@@ -9,7 +9,7 @@ import (
 	"github.com/ChimeraCoder/anaconda"
 )
 
-const tweetStatus = "%s\t(%s)\n%s"
+const tweetStatus = "%s    (%s)\n\n%s"
 
 var hnReplacer = strings.NewReplacer("Show HN:", "", "Ask HN:", "")
 
