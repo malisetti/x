@@ -70,20 +70,24 @@ func main() {
 	key := [32]byte{}
 	copy(key[:], keyBytes)
 
-	readTemplate := func() error {
+	readTemplate := func(lockTStore bool) error {
 		tmpl := template.New("index.html")
 		tmpl, err := tmpl.ParseFiles(conf.IndexTemplatePath)
-		tstore.Lock()
-		defer tstore.Unlock()
+		if lockTStore {
+			tstore.Lock()
+			defer tstore.Unlock()
+		}
 		tstore.tmpl = tmpl
 		return err
 	}
 
-	err = readTemplate()
+	err = readTemplate(false)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	tstore.bgColor = bgColors[rand.Intn(len(bgColors))]
 
 	var tapi *anaconda.TwitterApi
 	if conf.TweetItems {
@@ -148,7 +152,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-eightHrsTicker.C:
-				err := readTemplate()
+				err := readTemplate(true)
 				rand.Seed(time.Now().Unix())
 				tstore.bgColor = bgColors[rand.Intn(len(bgColors))]
 				if err != nil {
