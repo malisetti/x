@@ -359,10 +359,11 @@ func serveFile(path string) http.HandlerFunc {
 }
 
 func withRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
+	requiredHeaders := []string{"User-Agent", "Cf-Ipcountry", "Accept", "Cf-Connecting-Ip", "X-Forwarded-For"}
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Visiting : %s with method %s\n", r.URL.Path, r.Method)
-		for h, v := range r.Header {
-			log.Printf("%s : %s\n", h, strings.Join(v, " "))
+		log.Printf("Visiting : %s with method : %s\n", r.URL.Path, r.Method)
+		for _, h := range requiredHeaders {
+			log.Printf("%s : %s\n", h, r.Header.Get(h))
 		}
 		ip := realIP(r)
 		if ip != "" {
