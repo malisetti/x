@@ -272,7 +272,12 @@ func updateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 
 	sqlStr := `UPDATE items SET added = ? WHERE id IN (` + strings.Join(placeHolder, ",") + `)`
 
-	stmt, err := db.Prepare(sqlStr)
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare(sqlStr)
 	if err != nil {
 		return err
 	}
@@ -280,7 +285,16 @@ func updateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 
 	_, err = stmt.Exec(args...)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func insertOrReplaceItems(db *sql.DB, items []*item) error {
