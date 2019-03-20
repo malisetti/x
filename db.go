@@ -259,6 +259,30 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 	return items, nil
 }
 
+func updateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
+	now := time.Now().Unix()
+	var args []interface{}
+	args = append(args, now)
+
+	var placeHolder []string
+	for _, id := range ids {
+		placeHolder = append(placeHolder, "?")
+		args = append(args, id)
+	}
+
+	sqlStr := `UPDATE items SET added = ? WHERE id IN (` + strings.Join(placeHolder, ",") + `)`
+
+	stmt, err := db.Prepare(sqlStr)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(args...)
+
+	return err
+}
+
 func insertOrReplaceItems(db *sql.DB, items []*item) error {
 	// id, title, url, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink
 	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?, ?, ?)"

@@ -392,6 +392,11 @@ func flow(ctx context.Context, db *sql.DB, conf *config, tapi *anaconda.TwitterA
 
 	thirtyTwoHrsBack := time.Now().Add(-4 * eightHrs)
 
+	err = updateItemsAddedTimeToNow(db, ids)
+	if err != nil {
+		log.Println(err)
+	}
+
 	idAndTweetIDs, err := selectItemsIDsBefore(db, thirtyTwoHrsBack.Unix())
 	if err != nil {
 		log.Println(err)
