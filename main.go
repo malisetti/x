@@ -30,12 +30,6 @@ import (
 	"github.com/mseshachalam/x/server"
 )
 
-const (
-	port = "8080"
-)
-
-var bgColors = []string{"aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "blanchedalmond", "burlywood", "chartreuse"}
-
 func main() {
 	var tstore app.TempStore
 	var conf *app.Config
@@ -78,7 +72,7 @@ func main() {
 		return
 	}
 
-	tstore.BgColor = bgColors[rand.Intn(len(bgColors))]
+	tstore.BgColor = app.BgColors[rand.Intn(len(app.BgColors))]
 
 	var tapi *anaconda.TwitterApi
 	if conf.TweetItems {
@@ -117,8 +111,8 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	tctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
+	tctx, tcancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer tcancel()
 
 	go flow.Flow(tctx, &tstore, db, conf, tapi, &key)
 
@@ -129,8 +123,8 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-sixMinTicker.C:
-				tctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-				defer cancel()
+				tctx, tcancel := context.WithTimeout(ctx, 5*time.Minute)
+				defer tcancel()
 				flow.Flow(tctx, &tstore, db, conf, tapi, &key)
 			}
 		}
@@ -145,7 +139,7 @@ func main() {
 			case <-eightHrsTicker.C:
 				err := readTemplate(true)
 				rand.Seed(time.Now().Unix())
-				tstore.BgColor = bgColors[rand.Intn(len(bgColors))]
+				tstore.BgColor = app.BgColors[rand.Intn(len(app.BgColors))]
 				if err != nil {
 					log.Println(err)
 				}
