@@ -1,10 +1,12 @@
-package main
+package util
 
 import (
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/mseshachalam/x/app"
 )
 
 const (
@@ -12,30 +14,33 @@ const (
 	headerXRealIP       = "X-Real-IP"
 )
 
-func intsToChan(itemIds []int) <-chan int {
-	ids := make(chan int)
+// IntsToChan converts array of ints to chan of int
+func IntsToChan(ints []int) <-chan int {
+	out := make(chan int)
 	go func() {
-		defer close(ids)
-		for _, itID := range itemIds {
-			ids <- itID
+		defer close(out)
+		for _, i := range ints {
+			out <- i
 		}
 	}()
-	return ids
+	return out
 }
 
-func int64sToChan(itemIds []int64) <-chan int64 {
-	ids := make(chan int64)
+// Int64sToChan converts array of ints to chan of int
+func Int64sToChan(ints []int64) <-chan int64 {
+	out := make(chan int64)
 	go func() {
-		defer close(ids)
-		for _, itID := range itemIds {
-			ids <- itID
+		defer close(out)
+		for _, i := range ints {
+			out <- i
 		}
 	}()
-	return ids
+	return out
 }
 
-func itemsToChan(items []*item) <-chan *item {
-	itemsChan := make(chan *item)
+// ItemsToChan converts array of items to chan of item
+func ItemsToChan(items []*app.Item) <-chan *app.Item {
+	itemsChan := make(chan *app.Item)
 	go func() {
 		defer close(itemsChan)
 		for _, it := range items {
@@ -45,7 +50,8 @@ func itemsToChan(items []*item) <-chan *item {
 	return itemsChan
 }
 
-func urlToDomain(link string) (string, error) {
+// URLToDomain extracts domain from given link
+func URLToDomain(link string) (string, error) {
 	u, err := url.Parse(link)
 	if err != nil {
 		return "", err
@@ -62,7 +68,8 @@ func urlToDomain(link string) (string, error) {
 	return strings.Join(parts, "."), nil
 }
 
-func realIP(r *http.Request) string {
+// RealIP tries to extract real ip from request r using X-Forwarded-For and X-Real-IP headers
+func RealIP(r *http.Request) string {
 	ra := r.RemoteAddr
 	if ip := r.Header.Get(headerXForwardedFor); ip != "" {
 		ra = strings.Split(ip, ", ")[0]

@@ -1,4 +1,4 @@
-package main
+package dbp
 
 import (
 	"database/sql"
@@ -6,23 +6,35 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/mseshachalam/x/app"
 )
 
-const addDescColumn string = "ALTER TABLE items ADD COLUMN `description` TEXT;"
-const addTweetIDColumn string = "ALTER TABLE items ADD COLUMN `tweetID` INTEGER;"
-const addByColumn string = "ALTER TABLE items ADD COLUMN `by` TEXT;"
-const addTextxColumn string = "ALTER TABLE items ADD COLUMN `textx` TEXT;"
-const addEncLink string = "ALTER TABLE items ADD COLUMN `encLink` TEXT;"
-const addEncDiscussLink string = "ALTER TABLE items ADD COLUMN `encDiscussLink` TEXT;"
+const (
+	// AddDescColumn adds description col
+	AddDescColumn = "ALTER TABLE items ADD COLUMN `description` TEXT;"
+	// AddTweetIDColumn adds tweet id col
+	AddTweetIDColumn = "ALTER TABLE items ADD COLUMN `tweetID` INTEGER;"
+	// AddByColumn adds by col
+	AddByColumn = "ALTER TABLE items ADD COLUMN `by` TEXT;"
+	// AddTextxColumn adds textx col
+	AddTextxColumn = "ALTER TABLE items ADD COLUMN `textx` TEXT;"
+	// AddEncLink adds encLink col
+	AddEncLink = "ALTER TABLE items ADD COLUMN `encLink` TEXT;"
+	// AddEncDiscussLink adds encDiscussLink col
+	AddEncDiscussLink = "ALTER TABLE items ADD COLUMN `encDiscussLink` TEXT;"
+)
 
-func setupTables(db *sql.DB) error {
+// SetupTables creates items table
+func SetupTables(db *sql.DB) error {
 	stmt := "CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT)"
 
 	_, err := db.Exec(stmt)
 	return err
 }
 
-func updateItemsTable(db *sql.DB, stmts ...string) []error {
+// UpdateItemsTable executes stmts on db
+func UpdateItemsTable(db *sql.DB, stmts ...string) []error {
 	var errs []error
 	for _, stmt := range stmts {
 		_, err := db.Exec(stmt)
@@ -34,7 +46,8 @@ func updateItemsTable(db *sql.DB, stmts ...string) []error {
 	return errs
 }
 
-func deleteItemsWith(db *sql.DB, ids []int) error {
+// DeleteItemsWith deletes items with given ids
+func DeleteItemsWith(db *sql.DB, ids []int) error {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
@@ -46,14 +59,16 @@ func deleteItemsWith(db *sql.DB, ids []int) error {
 	return err
 }
 
-func deleteOlderItems(db *sql.DB, t int64) error {
+// DeleteOlderItems deletes items that are olders than t
+func DeleteOlderItems(db *sql.DB, t int64) error {
 	stmt := `DELETE FROM items WHERE added < %d`
 	stmt = fmt.Sprintf(stmt, t)
 	_, err := db.Exec(stmt)
 	return err
 }
 
-func selectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
+// SelectItemsIdsBefore selects items that are added after t
+func SelectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 	stmt := `SELECT id FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
@@ -78,7 +93,8 @@ func selectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 	return ids, nil
 }
 
-func selectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
+// SelectItemsIDsAfter selects items that are added before t
+func SelectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
 	stmt := `SELECT id FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
@@ -103,14 +119,16 @@ func selectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
 	return ids, nil
 }
 
-func selectItemsAfter(db *sql.DB, t int64) ([]*item, error) {
+// SelectItemsAfter selects items that are added after t
+func SelectItemsAfter(db *sql.DB, t int64) ([]*app.Item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	return execStmtAndGetItems(db, stmt)
 }
 
-func selectItemsIDsBefore(db *sql.DB, t int64) (map[int]int64, error) {
+// SelectItemsIDsBefore selects item ids that are added before t
+func SelectItemsIDsBefore(db *sql.DB, t int64) (map[int]int64, error) {
 	stmt := `SELECT id, tweetID FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
@@ -141,14 +159,16 @@ func selectItemsIDsBefore(db *sql.DB, t int64) (map[int]int64, error) {
 	return ids, nil
 }
 
-func selectItemsBefore(db *sql.DB, t int64) ([]*item, error) {
+// SelectItemsBefore selects items that are added before t
+func SelectItemsBefore(db *sql.DB, t int64) ([]*app.Item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	return execStmtAndGetItems(db, stmt)
 }
 
-func selectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
+// SelectExistingPropsOfItemsByIDsAsc selects items details that are not from hn for given ids
+func SelectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
@@ -161,9 +181,9 @@ func selectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) 
 	}
 
 	defer rows.Close()
-	var items []*item
+	var items []*app.Item
 	for rows.Next() {
-		var it item
+		var it app.Item
 		var description, encryptedURL, encryptedDiscussLink sql.NullString
 		var tweetID sql.NullInt64
 		err := rows.Scan(&it.ID,
@@ -191,7 +211,8 @@ func selectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) 
 	return items, nil
 }
 
-func selectItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
+// SelectItemsByIDsAsc selects items for given ids in asc order
+func SelectItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
@@ -201,7 +222,8 @@ func selectItemsByIDsAsc(db *sql.DB, ids []int) ([]*item, error) {
 	return execStmtAndGetItems(db, stmt)
 }
 
-func selectItemsByIDsDesc(db *sql.DB, ids []int) ([]*item, error) {
+// SelectItemsByIDsDesc selects items for given ids in desc order
+func SelectItemsByIDsDesc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
@@ -211,16 +233,16 @@ func selectItemsByIDsDesc(db *sql.DB, ids []int) ([]*item, error) {
 	return execStmtAndGetItems(db, stmt)
 }
 
-func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
+func execStmtAndGetItems(db *sql.DB, stmt string) ([]*app.Item, error) {
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
-	var items []*item
+	var items []*app.Item
 	for rows.Next() {
-		var it item
+		var it app.Item
 		var dead, deleted int
 		var description, by, textx, encryptedURL, encryptedDiscussLink sql.NullString
 		var tweetID sql.NullInt64
@@ -259,7 +281,8 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*item, error) {
 	return items, nil
 }
 
-func updateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
+// UpdateItemsAddedTimeToNow updates added time for given ids
+func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 	now := time.Now().Unix()
 	var args []interface{}
 	args = append(args, now)
@@ -297,7 +320,8 @@ func updateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 	return nil
 }
 
-func insertOrReplaceItems(db *sql.DB, items []*item) error {
+// InsertOrReplaceItems inserts or replaces given items
+func InsertOrReplaceItems(db *sql.DB, items []*app.Item) error {
 	// id, title, url, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink
 	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, tweetID, by, textx, encLink, encDiscussLink) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?, ?, ?)"
 

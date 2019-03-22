@@ -1,4 +1,4 @@
-package main
+package twitter
 
 import (
 	"context"
@@ -7,15 +7,18 @@ import (
 	"sync"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/mseshachalam/x/app"
+	"github.com/mseshachalam/x/util"
 )
 
 const tweetStatus = "%s    (%s)\n\n%s"
 
 var hnReplacer = strings.NewReplacer("Show HN:", "", "Ask HN:", "")
 
-func tweetItems(ctx context.Context, tapi *anaconda.TwitterApi, items []*item) map[int64]error {
+// TweetItems tweets given items using anaconda twitter client
+func TweetItems(ctx context.Context, tapi *anaconda.TwitterApi, items []*app.Item) map[int64]error {
 	errs := make(map[int64]error)
-	itemsChan := itemsToChan(items)
+	itemsChan := util.ItemsToChan(items)
 	var wg sync.WaitGroup
 	for i := 0; i < 4; i++ {
 		wg.Add(1)
@@ -48,9 +51,10 @@ func tweetItems(ctx context.Context, tapi *anaconda.TwitterApi, items []*item) m
 	return errs
 }
 
-func deleteTweets(ctx context.Context, tapi *anaconda.TwitterApi, ids []int64) map[int64]error {
+// DeleteTweets deletes tweets with given ids using anaconda twitter client
+func DeleteTweets(ctx context.Context, tapi *anaconda.TwitterApi, ids []int64) map[int64]error {
 	errs := make(map[int64]error)
-	idCh := int64sToChan(ids)
+	idCh := util.Int64sToChan(ids)
 	var wg sync.WaitGroup
 	for i := 0; i < 4; i++ {
 		wg.Add(1)

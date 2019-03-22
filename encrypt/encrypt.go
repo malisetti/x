@@ -1,5 +1,4 @@
-// cryptopasta - basic cryptography examples
-package main
+package encrypt
 
 import (
 	"crypto/aes"
@@ -10,7 +9,8 @@ import (
 	"io"
 )
 
-func encAndHex(x string, key *[32]byte) (string, error) {
+// EncAndHex encrypts x with key and converts x to hex
+func EncAndHex(x string, key *[32]byte) (string, error) {
 	cipher, err := Encrypt([]byte(x), key)
 	if err != nil {
 		return "", err
@@ -19,7 +19,8 @@ func encAndHex(x string, key *[32]byte) (string, error) {
 	return hex.EncodeToString(cipher), nil
 }
 
-func decFromHex(x string, key *[32]byte) (string, error) {
+// DecFromHex decodes hex encoded x and decrypts that with key
+func DecFromHex(x string, key *[32]byte) (string, error) {
 	buf, err := hex.DecodeString(x)
 	if err != nil {
 		return "", err
@@ -30,17 +31,6 @@ func decFromHex(x string, key *[32]byte) (string, error) {
 	}
 
 	return string(plainTextBuf), nil
-}
-
-// NewEncryptionKey generates a random 256-bit key for Encrypt() and
-// Decrypt(). It panics if the source of randomness fails.
-func NewEncryptionKey() *[32]byte {
-	key := [32]byte{}
-	_, err := io.ReadFull(rand.Reader, key[:])
-	if err != nil {
-		panic(err)
-	}
-	return &key
 }
 
 // Encrypt encrypts data using 256-bit AES-GCM.  This both hides the content of

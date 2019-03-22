@@ -1,6 +1,7 @@
-package main
+package app
 
-type config struct {
+// Config is required configuration for app
+type Config struct {
 	HTTPPort                     string `json:"HTTPPort"`
 	EncryptKey                   string `json:"encKey"`
 	IndexTemplatePath            string `json:"indexTemplatePath"`

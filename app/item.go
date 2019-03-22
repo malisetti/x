@@ -1,6 +1,7 @@
-package main
+package app
 
-type item struct {
+// Item is HN item
+type Item struct {
 	//from HN
 	ID          int    `json:"id"`      //The item's unique id.
 	By          string `json:"by"`      //The username of the item's author.
