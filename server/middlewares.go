@@ -17,7 +17,7 @@ var CrawlerAliases = []string{"bot", "crawler", "spider", "trendsmapresolver", "
 // WithRequestHeadersLogging logs headers from RequiredHeaders
 func WithRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Visiting : %s with method : %s\n", r.URL.Path, r.Method)
+		log.Printf("Visiting : %s with method : %s\n", r.URL.RequestURI(), r.Method)
 		for _, h := range RequiredHeaders {
 			log.Printf("%s : %s\n", h, r.Header.Get(h))
 		}
