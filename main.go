@@ -164,13 +164,13 @@ func main() {
 		http.StripPrefix("/static/",
 			http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
 
-	r.Handle("/", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.RootHandler(fetchItems, &tstore)))).Methods(http.MethodGet)
+	r.Handle("/", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.RootHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
 
 	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.SitemapHandler(fetchItems, &key)))).Methods(http.MethodGet)
 
 	r.Handle("/feed/{type}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FeedHandler(fetchItems)))).Methods(http.MethodGet)
 
-	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.LinkHandler(&key)))).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.LinkHandler(&key))))).Methods(http.MethodGet, http.MethodPost)
 
 	if conf.HaveRobotsTxt {
 		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
