@@ -1,4 +1,3 @@
-// Package server provides http middlewares.
 package server
 
 import (
