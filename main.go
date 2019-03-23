@@ -1,3 +1,4 @@
+// This application keeps any article that appeared on hacker news (http://news.ycombinator.com/) for eight hours after they left the homepage.
 package main
 
 import (
