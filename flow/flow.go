@@ -1,3 +1,4 @@
+// Package flow is the logic of the app.
 package flow
 
 import (

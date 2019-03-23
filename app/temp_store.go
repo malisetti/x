@@ -1,3 +1,4 @@
+// Package app provides models that are needed by x.
 package app
 
 import (
@@ -8,7 +9,10 @@ import (
 // TempStore is temp storage for app
 type TempStore struct {
 	sync.RWMutex
+	// CurrentTop30ItemIds is the list of top items.
 	CurrentTop30ItemIds []int
-	Tmpl                *template.Template
-	BgColor             string
+	// Tmpl is the template.
+	Tmpl *template.Template
+	// BgColor of the rendered template.
+	BgColor string
 }

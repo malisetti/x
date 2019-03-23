@@ -1,3 +1,4 @@
+// Package twitter provides functions to tweet and delete tweets.
 package twitter
 
 import (

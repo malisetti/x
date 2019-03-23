@@ -1,3 +1,4 @@
+// Package dbp provides access to storage and querying.
 package dbp
 
 import (

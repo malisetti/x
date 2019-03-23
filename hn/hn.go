@@ -1,3 +1,4 @@
+// Package hn provides functions to fetch data from hacker news.
 package hn
 
 import (
