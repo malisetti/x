@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"math/rand"
@@ -29,6 +28,8 @@ import (
 	"github.com/mseshachalam/x/flow"
 	"github.com/mseshachalam/x/hn"
 	"github.com/mseshachalam/x/server"
+
+	"golang.org/x/crypto/acme/autocert" 
 )
 
 func main() {
@@ -178,11 +179,20 @@ func main() {
 
 	http.Handle("/", r)
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%s", conf.HTTPPort),
-		ReadTimeout:  2 * time.Second,
-		WriteTimeout: 2 * time.Second,
+	m := &autocert.Manager{
+		Cache:      autocert.DirCache("secret-dir"),
+		Email: 		"abbiya@gmail.com",
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist("8hrs.xyz", "www.8hrs.xyz", "localhost"),
 	}
 
-	log.Println(srv.ListenAndServe())
+	srv2 := &http.Server{
+		Addr:      ":https",
+		ReadTimeout:  2 * time.Second,
+		WriteTimeout: 2 * time.Second,
+		TLSConfig: m.TLSConfig(),
+	}
+
+	log.Println("Running on port: 443")
+	log.Fatalln(srv2.ListenAndServeTLS("", ""))
 }

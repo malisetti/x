@@ -14,5 +14,6 @@ require (
 	github.com/snabb/sitemap v1.0.0
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/ulule/limiter/v3 v3.1.0
+	golang.org/x/crypto v0.0.0-20180820150726-614d502a4dac
 	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3 // indirect
 )
