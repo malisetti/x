@@ -9,7 +9,7 @@ import (
 )
 
 // RequiredHeaders are the headers we need to care about
-var RequiredHeaders = []string{"User-Agent", "Cf-Ipcountry", "Accept", "Cf-Connecting-Ip", "X-Forwarded-For"}
+var RequiredHeaders = []string{"User-Agent", "Cf-Ipcountry", "Accept", "Cf-Connecting-Ip", "X-Forwarded-For", "Content-Type"}
 
 // CrawlerAliases are the names of possible crawler's user agents
 var CrawlerAliases = []string{"bot", "crawler", "spider", "trendsmapresolver", "fetcher"}
