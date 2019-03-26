@@ -38,6 +38,7 @@ func WithBotsAndCrawlersBlocking(next http.HandlerFunc) http.HandlerFunc {
 
 		for _, ca := range CrawlerAliases {
 			if strings.Contains(ua, ca) {
+				log.Println("request rejected with forbidden status")
 				w.WriteHeader(http.StatusForbidden)
 				return
 			}
