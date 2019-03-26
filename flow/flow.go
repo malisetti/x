@@ -142,10 +142,11 @@ func Flow(ctx context.Context, tstore *app.TempStore, db *sql.DB, conf *app.Conf
 		}
 	}
 
+	idsToURLs := make(map[int]string)
 	// visit the link with lynx and update description
 	for _, it := range items {
 		if it.Description == "" {
-
+			idsToURLs[it.ID] = it.URL
 		}
 
 		if it.URL == "" {
@@ -171,6 +172,23 @@ func Flow(ctx context.Context, tstore *app.TempStore, db *sql.DB, conf *app.Conf
 		if it.EncryptedDiscussLink == "" {
 			h, _ := encrypt.EncAndHex(it.DiscussLink, key)
 			it.EncryptedDiscussLink = h
+		}
+	}
+
+	lynxOutput := hn.VisitAndGetDescription(ctx, idsToURLs)
+
+	for lo := range lynxOutput {
+		for _, it := range items {
+			if it.ID != lo.ID {
+				continue
+			}
+			if lo.Err == nil {
+				it.Description = lo.Output
+			} else {
+				it.Description = lo.Err.Error()
+			}
+
+			break
 		}
 	}
 

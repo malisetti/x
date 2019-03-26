@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,6 +27,9 @@ const (
 	// PostLinkURL is the HN URL for given id
 	PostLinkURL = "https://news.ycombinator.com/item?id=%d"
 )
+
+// LynxOptions is the list of options of passed while dumping the url with lynx
+var LynxOptions = []string{"-dump", "-nolist", "-nonumbers", "-notitle", "-nostatus"} // "-list_inline"
 
 // FetchCurrentItems fetches items from db that are with given ids plus older items from since
 func FetchCurrentItems(db *sql.DB, since time.Time, ids []int) ([]*app.Item, error) {
@@ -153,30 +157,55 @@ func FetchTopHNStories(ctx context.Context, limit int) ([]int, error) {
 	return ids[:limit], nil
 }
 
-// TODO: Do not use
-func visitAndGetDescription(ctx context.Context, idsToURLs map[int]string) map[int]string {
-	out := make(map[int]string)
-	var wg sync.WaitGroup
-	limit := 0
-	for i, u := range idsToURLs {
-		if limit < 4 {
-			wg.Add(1)
-			go func(i int, u string) (b []byte, err error) {
-				defer func() {
-					wg.Done()
-					if err != nil {
-						out[i] = string(b)
-					}
-					limit--
-				}()
-
-				cmd := exec.CommandContext(ctx, "lynx", "-dump", u)
-				b, err = cmd.Output()
-				return
-			}(i, u)
+// VisitAndGetDescription visits links using lynx
+func VisitAndGetDescription(ctx context.Context, idsToURLs map[int]string) <-chan app.Lynx {
+	in := make(chan int)
+	out := make(chan app.Lynx)
+	go func() {
+		defer close(in)
+		for id := range idsToURLs {
+			in <- id
 		}
+	}()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for id := range in {
+				u := idsToURLs[id]
+				resp, err := http.Head(u)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				contentType := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Type")))
+				if !(strings.Contains(contentType, "text/html") || strings.Contains(contentType, "text/plain")) {
+					log.Printf("could not visit %s with content type %s\n", u, contentType)
+					continue
+				}
+
+				var tm app.Lynx
+				opts := append(LynxOptions, u)
+				cmd := exec.CommandContext(ctx, "lynx", opts...)
+				b, err := cmd.Output()
+				tm.ID = id
+				if err == nil {
+					tm.Output = string(b)
+				} else {
+					tm.Err = err
+				}
+
+				out <- tm
+			}
+		}()
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
 
 	return out
 }

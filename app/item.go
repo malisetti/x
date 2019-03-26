@@ -24,9 +24,9 @@ type Item struct {
 	Domain string `json:"domain"`
 
 	//EncryptedURL is the URL encrypted using key from config.
-	EncryptedURL string `json:"-"`
+	EncryptedURL string `json:"encryptedURL"`
 	//EncryptedDiscussLink is the URL encrypted using key from config.
-	EncryptedDiscussLink string `json:"-"`
+	EncryptedDiscussLink string `json:"encryptedDiscussLink"`
 
 	//Description of the item.
 	Description string `json:"description"`
