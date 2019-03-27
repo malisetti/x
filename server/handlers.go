@@ -35,8 +35,9 @@ func RootHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *
 			return
 		}
 
-		requestedContentType := r.Header.Get("Content-Type")
-		if requestedContentType == "application/json" {
+		requestedContentType := strings.ToLower(strings.TrimSpace(r.Header.Get("Content-Type")))
+		accept := strings.ToLower(strings.TrimSpace(r.Header.Get("Accept")))
+		if strings.Contains(requestedContentType, "application/json") && strings.Contains(accept, "application/json") {
 			w.Header().Set("Content-Type", "application/json")
 			err = json.NewEncoder(w).Encode(items)
 			if err != nil {
