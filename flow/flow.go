@@ -184,8 +184,6 @@ func Flow(ctx context.Context, tstore *app.TempStore, db *sql.DB, conf *app.Conf
 			}
 			if lo.Err == nil {
 				it.Description = lo.Output
-			} else {
-				it.Description = lo.Err.Error()
 			}
 
 			break
