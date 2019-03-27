@@ -1,5 +1,10 @@
+@import "~normalize.css";
+@import "~@blueprintjs/core/lib/css/blueprint.css";
+@import "~@blueprintjs/icons/lib/css/blueprint-icons.css";
+
 html {
   font-size: 100%;
+  background-color: #293742;
 }
 
 body {
@@ -12,20 +17,8 @@ body {
   padding: 20px;
 }
 
-button:disabled {
-  opacity: 0.5;
-}
-
 .list-item {
   padding: 5px;
-}
-
-.time-frames {
-  display: flex;
-}
-
-.time-frame-link {
-  margin-right: 10px;
 }
 
 .domain-link {
@@ -45,5 +38,10 @@ button:disabled {
   border-top: 1px solid chocolate;
 }
 
-.reverse-link {
+.time-frame-group {
+  margin-bottom: 10px;
+}
+
+.time-frame-button {
+  padding: 5px 10px;
 }

@@ -3,11 +3,12 @@ import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
 import * as DataActions from '../../actions/data.actions'
-import { TITLE, TIME_FRAMES, HRS, REVERSE } from '../../constants'
+import { TITLE, REVERSE } from '../../constants'
 
 // const items = require('../../items.json')
 import ClickableLink from '../../components/clickable-link'
 import ItemList from '../../components/item-list'
+import TimeFrames from '../../components/time-frames'
 
 class Home extends React.Component {
 
@@ -34,21 +35,9 @@ class Home extends React.Component {
   render() {
     const { items, pinnedItems } = this.props.allItems
     return (
-      <div>
+      <div className='bp3-dark'>
         <h1>{TITLE}</h1>
-        <div className='time-frames'>
-          {
-            TIME_FRAMES.map((timeFrame, idx) => (
-              <ClickableLink
-                className='time-frame-link'
-                key={idx}
-                onClick={() => this.handleTimeFrameClick(timeFrame)}
-              >
-                {`${timeFrame}${HRS}`}
-              </ClickableLink>
-            ))
-          }
-        </div>
+        <TimeFrames handleTimeFrameClick={this.handleTimeFrameClick} />
         {
           !!pinnedItems.length &&
           <React.Fragment>
