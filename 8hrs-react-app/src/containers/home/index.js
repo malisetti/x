@@ -3,57 +3,11 @@ import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
 import * as DataActions from '../../actions/data.actions'
-import { TITLE, DISCUSS, TIME_FRAMES, HRS, PIN, UNPIN } from '../../constants'
+import { TITLE, TIME_FRAMES, HRS, REVERSE } from '../../constants'
 
 // const items = require('../../items.json')
-
-const ClickableLink = ({ className, id, onClick, children }) => (
-  <a
-    className={className}
-    key={id}
-    href="#"
-    onClick={(e) => {
-      e.preventDefault()
-      onClick(id)
-    }}
-  >{children}</a>
-)
-
-const ListItem = ({ item, index, onPinClick }) => (
-  <div className='list-item' key={item.id}>
-    <a
-      href={item.url}
-      target="_blank"
-    >
-      {`${index + 1}. ${item.title}`}
-    </a>
-    <a
-      className='domain-link'
-      href={item.url}
-      target="_blank"
-    >
-      {`(${item.domain})`}
-    </a>
-    <a
-      className='discuss-link'
-      href={item.discussLink}
-      target='_blank'
-      ping={`/l/${item.encryptedDiscussLink}`}
-    >
-      {DISCUSS}
-    </a>
-    <a
-      className='pinning-link'
-      href="#"
-      onClick={(e) => {
-        e.preventDefault()
-        onPinClick(item, item.isPinned)
-      }}
-    >
-      {item.isPinned ? UNPIN : PIN}
-    </a>
-  </div>
-)
+import ClickableLink from '../../components/clickable-link'
+import ItemList from '../../components/item-list'
 
 class Home extends React.Component {
 
@@ -79,7 +33,7 @@ class Home extends React.Component {
 
   render() {
     const { items, pinnedItems } = this.props.allItems
-    return(
+    return (
       <div>
         <h1>{TITLE}</h1>
         <div className='time-frames'>
@@ -98,20 +52,18 @@ class Home extends React.Component {
         {
           !!pinnedItems.length &&
           <React.Fragment>
-            { pinnedItems.map((item, index) => <ListItem key={item.id} item={item} index={index} onPinClick={this.handlePinClick} />) }
+            <ItemList items={pinnedItems} handlePinClick={this.handlePinClick} />
             <hr className='separator'/>
           </React.Fragment>
         }
         <ClickableLink
-          className='time-frame-link'
+          className='reverse-link'
           id='reverse-items'
           onClick={this.handleReverseClick}
         >
-          reverse
+          {REVERSE}
         </ClickableLink>
-        {
-          items.map((item, index) => <ListItem key={item.id} item={item} index={index} onPinClick={this.handlePinClick} />)
-        }
+        <ItemList items={items} handlePinClick={this.handlePinClick} />
       </div>
     )
   }
