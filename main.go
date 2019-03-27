@@ -39,7 +39,7 @@ func main() {
 	configFilePath := os.Getenv("APP_CONFIG_PATH")
 	f, err := os.Open(configFilePath)
 	if err != nil {
-		log.Println(err)
+		log.Printf("unable to open %s: failed with error %s", configFilePath, err.Error())
 		return
 	}
 	dec := json.NewDecoder(f)
@@ -176,7 +176,7 @@ func main() {
 		http.StripPrefix("/static/",
 			http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
 
-	r.Handle("/", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.RootHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
+	r.Handle("/", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.RootHandler(fetchItems, &tstore))))).Methods(http.MethodGet, http.MethodOptions)
 
 	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.SitemapHandler(fetchItems, &key)))).Methods(http.MethodGet)
 

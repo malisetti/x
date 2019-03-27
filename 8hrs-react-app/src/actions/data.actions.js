@@ -8,7 +8,6 @@ export const getData = (timeFrame = TIME_FRAMES[0]) => {
     axios
       .get(BASE_URL, { headers: { 'Content-Type': 'application/json' }, data: {}, params: { t: timeFrame } })
       .then((response) => {
-        console.log(response.data[0])
         dispatch({
           type: GET_DATA,
           payload: {
@@ -24,16 +23,16 @@ export const reverseItems = () => ({
   type: REVERSE_ITEMS,
 })
 
-export const pinItem = (id) => ({
+export const pinItem = (item) => ({
   type: PIN_ITEM,
   payload: {
-    pinnedId: id,
+    pinnedItem: item,
   },
 })
 
-export const unPinItem = (id) => ({
+export const unpinItem = (id) => ({
   type: UNPIN_ITEM,
   payload: {
-    unPinnedId: id,
+    unpinnedId: id,
   },
 })

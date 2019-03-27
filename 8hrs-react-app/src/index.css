@@ -36,3 +36,11 @@ button:disabled {
   font-weight: lighter;
   color: black;
 }
+
+.pinning-link {
+  margin-left: 10px;
+}
+
+.separator {
+  border-top: 1px solid chocolate;
+}

@@ -2,3 +2,7 @@ app.db-journal
 x
 app.db
 prod-config.json
+static/js
+static/css
+8hrs-react-app/build
+.vscode

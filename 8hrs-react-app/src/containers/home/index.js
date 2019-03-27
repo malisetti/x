@@ -3,10 +3,7 @@ import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
 import * as DataActions from '../../actions/data.actions'
-import { TIME_FRAMES, HRS } from '../../constants'
-
-const TITLE = 'Tech & News'
-const DISCUSS = 'discuss'
+import { TITLE, DISCUSS, TIME_FRAMES, HRS, PIN, UNPIN } from '../../constants'
 
 // const items = require('../../items.json')
 
@@ -46,12 +43,14 @@ const ListItem = ({ item, index, onPinClick }) => (
       {DISCUSS}
     </a>
     <a
-      className='discuss-link'
-      href={item.discussLink}
-      target='_blank'
-      ping={`/l/${item.encryptedDiscussLink}`}
+      className='pinning-link'
+      href="#"
+      onClick={(e) => {
+        e.preventDefault()
+        onPinClick(item, item.isPinned)
+      }}
     >
-      {DISCUSS}
+      {item.isPinned ? UNPIN : PIN}
     </a>
   </div>
 )
@@ -70,12 +69,16 @@ class Home extends React.Component {
     this.props.reverseItems()
   }
 
-  handlePinClick = (id, action) => {
-    this.props.
+  handlePinClick = (item, isPinned) => {
+    if (isPinned) {
+      this.props.unpinItem(item.id)
+      return
+    }
+    this.props.pinItem(item)
   }
 
   render() {
-    const { items } = this.props
+    const { items, pinnedItems } = this.props.allItems
     return(
       <div>
         <h1>{TITLE}</h1>
@@ -92,6 +95,13 @@ class Home extends React.Component {
             ))
           }
         </div>
+        {
+          !!pinnedItems.length &&
+          <React.Fragment>
+            { pinnedItems.map((item, index) => <ListItem key={item.id} item={item} index={index} onPinClick={this.handlePinClick} />) }
+            <hr className='separator'/>
+          </React.Fragment>
+        }
         <ClickableLink
           className='time-frame-link'
           id='reverse-items'
@@ -100,19 +110,28 @@ class Home extends React.Component {
           reverse
         </ClickableLink>
         {
-          items.map((item, index) => <ListItem item={item} index={index} onPinClick={this.handlePinning} />)
+          items.map((item, index) => <ListItem key={item.id} item={item} index={index} onPinClick={this.handlePinClick} />)
         }
       </div>
     )
   }
 }
 
-const arrangeItems = (items, pinnedItemsIds) => {
-
+const arrangeItems = (items, pinnedItems) => {
+  const pinnedItemsIds = pinnedItems.map(item => item.id)
+  const otherItems = items.map(item => {
+    if (!pinnedItemsIds.includes(item.id)) return { ...item, isPinned: false }
+    return { ...item, isPinned: true }
+  })
+  const formattedPinnedItems = pinnedItems.map(item => ({ ...item, isPinned: true }))
+  return {
+    pinnedItems: [...formattedPinnedItems],
+    items: [...otherItems],
+  }
 }
 
 const mapStateToProps = ({ data }) => ({
-  items: arrangeItems(data.items, data.pinnedItemsIds) 
+  allItems: arrangeItems(data.items, data.pinnedItems) 
 })
 
 const mapDispatchToProps = dispatch =>

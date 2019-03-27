@@ -4,37 +4,32 @@ export const PIN_ITEM = "data/PIN_ITEM"
 export const UNPIN_ITEM = "data/UNPIN_ITEM"
 
 const initialState = {
-  pinnedItemsIds: [],
-  items: {},
+  pinnedItems: [],
+  items: [],
 }
-
-const itemsReducer = (acc, item) => ({
-  ...acc,
-  [item.id]: item,
-})
 
 export default (state = initialState, action) => {
   switch (action.type) {
     case GET_DATA:
       return {
         ...state,
-        items: action.payload.items.reduce(itemsReducer, {}),
+        items: action.payload.items,
       }
     case REVERSE_ITEMS:
       return {
         ...state,
-        items: Object.values(state.items).reverse().reduce(itemsReducer, {}),
+        items: [...state.items].reverse(),
       }
     case PIN_ITEM: {
       return {
         ...state,
-        pinnedItemsIds: [action.payload.pinnedId, ...pinnedItemsIds],
+        pinnedItems: [action.payload.pinnedItem, ...state.pinnedItems],
       }
     }
     case UNPIN_ITEM: {
       return {
         ...state,
-        pinnedItemsIds: state.pinnedItemsIds.filter(id => id !== action.payload.unPinnedId),
+        pinnedItems: state.pinnedItems.filter(item => item.id !== action.payload.unpinnedId),
       }
     }
 
