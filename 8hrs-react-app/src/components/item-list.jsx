@@ -1,8 +1,10 @@
 import React from 'react'
 
+import { Card, Elevation, Button } from '@blueprintjs/core'
+
 import { DISCUSS, PIN, UNPIN } from '../constants'
 
-const ListItem = ({ item, index, onPinClick }) => (
+const ListItem1 = ({ item, index, onPinClick }) => (
   <div className='list-item' key={item.id}>
     <a
       href={item.url}
@@ -36,6 +38,18 @@ const ListItem = ({ item, index, onPinClick }) => (
       {item.isPinned ? UNPIN : PIN}
     </a>
   </div>
+)
+
+const ListItem= ({ item, index, onPinClick }) => (
+  <Card
+    interactive={true}
+    elevation={Elevation.TWO}
+    key={item.id}
+  >
+    <h5><a href="#">{item.title}</a></h5>
+    <p>{item.description}</p>
+    <Button>Pin</Button>
+</Card>
 )
 
 const ItemList = ({ items, handlePinClick }) => (

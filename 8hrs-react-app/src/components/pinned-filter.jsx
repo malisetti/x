@@ -4,14 +4,15 @@ import { ButtonGroup, Button } from '@blueprintjs/core'
 
 import { PIN_FILTERS } from '../constants'
 
-const PinnedFilter = ({ handlePinnedFilterClick }) => (
+const PinnedFilter = ({ value, onPinFilterClick }) => (
   <ButtonGroup>
     {
       PIN_FILTERS.map((filter, index) => (
         <Button
           key={index}
+          active={value === filter}
           text={filter}
-          onClick={() => handlePinnedFilterClick(filter)}
+          onClick={() => onPinFilterClick(filter)}
         />
       ))
     }

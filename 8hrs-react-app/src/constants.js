@@ -11,3 +11,5 @@ export const PIN = 'pin'
 export const UNPIN = 'unpin'
 
 export const PIN_FILTERS = ['All', 'Pinned']
+
+export const PINNED_ITEMS_KEY = 'PINNED_ITEMS'

@@ -52,3 +52,7 @@ body {
 .time-frame-button {
   padding: 5px 10px;
 }
+
+.progress-bar {
+  margin: 20px 0;
+}

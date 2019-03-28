@@ -2,11 +2,11 @@ import React from 'react'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
-import * as DataActions from '../../actions/data.actions'
-import { TITLE, REVERSE } from '../../constants'
+import { Switch, ProgressBar } from '@blueprintjs/core'
 
-// const items = require('../../items.json')
-import ClickableLink from '../../components/clickable-link'
+import * as DataActions from '../../actions/data.actions'
+import { TITLE, REVERSE, PIN_FILTERS } from '../../constants'
+
 import ItemList from '../../components/item-list'
 import TimeFrames from '../../components/time-frames'
 import PinnedFilter from '../../components/pinned-filter'
@@ -15,6 +15,7 @@ class Home extends React.Component {
 
   componentDidMount() {
     this.props.getData()
+    this.props.getPinnedItems()
   }
 
   handleTimeFrameClick = (timeFrame) => {
@@ -33,33 +34,36 @@ class Home extends React.Component {
     this.props.pinItem(item)
   }
 
+  handlePinFilterClick = (value) => {
+    this.props.changePinFilter(value)
+  }
+
   render() {
-    const { timeFrame, allItems } = this.props
+    const { timeFrame, isReversed, allItems, pinFilter, isLoading } = this.props
     const { items, pinnedItems } = allItems
+    const itemsToDisplay = pinFilter === PIN_FILTERS[0] ? items : pinnedItems
     return (
       <div className='bp3-dark'>
         <h1>{TITLE}</h1>
         <div className='filter-container'>
           <TimeFrames
             value={timeFrame}
-            handleTimeFrameClick={this.handleTimeFrameClick} />
-          <PinnedFilter />
+            onTimeFrameClick={this.handleTimeFrameClick} />
+          <PinnedFilter
+            value={pinFilter}
+            onPinFilterClick={this.handlePinFilterClick}/>
         </div>
         {
-          !!pinnedItems.length &&
-          <React.Fragment>
-            <ItemList items={pinnedItems} handlePinClick={this.handlePinClick} />
-            <hr className='separator'/>
-          </React.Fragment>
+          isLoading && <ProgressBar className='progress-bar'/>
         }
-        <ClickableLink
-          className='reverse-link'
-          id='reverse-items'
-          onClick={this.handleReverseClick}
-        >
-          {REVERSE}
-        </ClickableLink>
-        <ItemList items={items} handlePinClick={this.handlePinClick} />
+        {
+          pinFilter === PIN_FILTERS[0]
+          && <Switch checked={isReversed} label={REVERSE} onChange={this.handleReverseClick} />
+        }
+        {
+          !!itemsToDisplay.length && <ItemList items={itemsToDisplay} handlePinClick={this.handlePinClick} />
+        }
+        
       </div>
     )
   }
@@ -81,6 +85,9 @@ const arrangeItems = (items, pinnedItems) => {
 const mapStateToProps = ({ data }) => ({
   allItems: arrangeItems(data.items, data.pinnedItems),
   timeFrame: data.timeFrame,
+  isReversed: data.isReversed,
+  pinFilter: data.pinFilter,
+  isLoading: data.isLoading,
 })
 
 const mapDispatchToProps = dispatch =>

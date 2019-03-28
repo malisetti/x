@@ -4,7 +4,7 @@ import { ButtonGroup, Button } from '@blueprintjs/core'
 
 import { TIME_FRAMES, HRS } from '../constants'
 
-const TimeFrames = ({ value, handleTimeFrameClick }) => (
+const TimeFrames = ({ value, onTimeFrameClick }) => (
   <ButtonGroup className='time-frame-group'>
     {
       TIME_FRAMES.map((timeFrame, index) => (
@@ -13,7 +13,7 @@ const TimeFrames = ({ value, handleTimeFrameClick }) => (
           key={index}
           active={value === timeFrame}
           text={`${timeFrame}${HRS}`}
-          onClick={() => handleTimeFrameClick(timeFrame)}
+          onClick={() => onTimeFrameClick(timeFrame)}
         />
       ))
     }
