@@ -12,6 +12,7 @@ export const getData = (timeFrame = TIME_FRAMES[0]) => {
           type: GET_DATA,
           payload: {
             items: response.data,
+            timeFrame,
           },
         })
       })

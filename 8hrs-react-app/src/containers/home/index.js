@@ -9,6 +9,7 @@ import { TITLE, REVERSE } from '../../constants'
 import ClickableLink from '../../components/clickable-link'
 import ItemList from '../../components/item-list'
 import TimeFrames from '../../components/time-frames'
+import PinnedFilter from '../../components/pinned-filter'
 
 class Home extends React.Component {
 
@@ -33,11 +34,17 @@ class Home extends React.Component {
   }
 
   render() {
-    const { items, pinnedItems } = this.props.allItems
+    const { timeFrame, allItems } = this.props
+    const { items, pinnedItems } = allItems
     return (
       <div className='bp3-dark'>
         <h1>{TITLE}</h1>
-        <TimeFrames handleTimeFrameClick={this.handleTimeFrameClick} />
+        <div className='filter-container'>
+          <TimeFrames
+            value={timeFrame}
+            handleTimeFrameClick={this.handleTimeFrameClick} />
+          <PinnedFilter />
+        </div>
         {
           !!pinnedItems.length &&
           <React.Fragment>
@@ -72,7 +79,8 @@ const arrangeItems = (items, pinnedItems) => {
 }
 
 const mapStateToProps = ({ data }) => ({
-  allItems: arrangeItems(data.items, data.pinnedItems) 
+  allItems: arrangeItems(data.items, data.pinnedItems),
+  timeFrame: data.timeFrame,
 })
 
 const mapDispatchToProps = dispatch =>

@@ -9,3 +9,5 @@ export const HRS = 'hrs'
 
 export const PIN = 'pin'
 export const UNPIN = 'unpin'
+
+export const PIN_FILTERS = ['All', 'Pinned']

@@ -38,6 +38,13 @@ body {
   border-top: 1px solid chocolate;
 }
 
+.filter-container {
+  display: flex;
+  width: 500px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
 .time-frame-group {
   margin-bottom: 10px;
 }

@@ -1,9 +1,12 @@
+import { TIME_FRAMES } from '../constants'
+
 export const GET_DATA = 'data/GET_DATA'
 export const REVERSE_ITEMS = "data/REVERSE_ITEMS"
 export const PIN_ITEM = "data/PIN_ITEM"
 export const UNPIN_ITEM = "data/UNPIN_ITEM"
 
 const initialState = {
+  timeFrame: TIME_FRAMES[0],
   pinnedItems: [],
   items: [],
 }
@@ -14,6 +17,7 @@ export default (state = initialState, action) => {
       return {
         ...state,
         items: action.payload.items,
+        timeFrame: action.payload.timeFrame,
       }
     case REVERSE_ITEMS:
       return {
