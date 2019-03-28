@@ -4,7 +4,7 @@
 
 html {
   font-size: 100%;
-  background-color: #293742;
+  /* background-color: #293742; */
 }
 
 body {
@@ -40,7 +40,7 @@ body {
 
 .filter-container {
   display: flex;
-  width: 500px;
+  width: 300px;
   justify-content: space-between;
   align-items: flex-start;
 }
@@ -55,4 +55,37 @@ body {
 
 .progress-bar {
   margin: 20px 0;
+}
+
+.reverse-switch {
+  width: 100px;
+}
+
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.list-item-card {
+  padding: 0 10px 10px 20px;
+  margin: 10px 0;
+}
+
+.action-group {
+  margin-left: 10px;
+  flex-wrap: wrap;
+  flex: none;
+}
+
+.action-button {
+  margin-right: 4px;
+}
+
+.domain-text {
+  color: brown;
+}
+
+.no-border {
+  outline: none;
 }

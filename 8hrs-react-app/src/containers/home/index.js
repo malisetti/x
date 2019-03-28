@@ -43,7 +43,7 @@ class Home extends React.Component {
     const { items, pinnedItems } = allItems
     const itemsToDisplay = pinFilter === PIN_FILTERS[0] ? items : pinnedItems
     return (
-      <div className='bp3-dark'>
+      <div>
         <h1>{TITLE}</h1>
         <div className='filter-container'>
           <TimeFrames
@@ -54,11 +54,16 @@ class Home extends React.Component {
             onPinFilterClick={this.handlePinFilterClick}/>
         </div>
         {
-          isLoading && <ProgressBar className='progress-bar'/>
+          pinFilter === PIN_FILTERS[0] &&
+            <Switch
+              className='reverse-switch no-border'
+              checked={isReversed}
+              label={REVERSE}
+              onChange={this.handleReverseClick}
+            />
         }
         {
-          pinFilter === PIN_FILTERS[0]
-          && <Switch checked={isReversed} label={REVERSE} onChange={this.handleReverseClick} />
+          isLoading && <ProgressBar className='progress-bar'/>
         }
         {
           !!itemsToDisplay.length && <ItemList items={itemsToDisplay} handlePinClick={this.handlePinClick} />

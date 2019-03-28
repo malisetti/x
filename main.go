@@ -174,7 +174,7 @@ func main() {
 		fmt.Fprintf(rw, "hello world")
 	})
 
-	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.JSONHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
+	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.JSONHandler(fetchItems, &tstore))))).Methods(http.MethodGet, http.MethodOptions)
 
 	r.Handle("/html", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.HTMLHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
 
