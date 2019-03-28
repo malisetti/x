@@ -9,10 +9,11 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"os/exec"
 	"strings"
 	"sync"
 	"time"
+
+	"jaytaylor.com/html2text"
 
 	"github.com/mseshachalam/x/app"
 	"github.com/mseshachalam/x/dbp"
@@ -175,7 +176,7 @@ func VisitAndGetDescription(ctx context.Context, idsToURLs map[int]string) <-cha
 			defer wg.Done()
 			for id := range in {
 				u := idsToURLs[id]
-				resp, err := http.Head(u)
+				resp, err := http.Get(u)
 				if err != nil {
 					log.Println(err)
 					continue
@@ -185,14 +186,14 @@ func VisitAndGetDescription(ctx context.Context, idsToURLs map[int]string) <-cha
 					log.Printf("could not visit %s with content type %s\n", u, contentType)
 					continue
 				}
+				defer resp.Body.Close()
+
+				str, err := html2text.FromReader(resp.Body, html2text.Options{OmitLinks: true})
 
 				var tm app.Lynx
-				opts := append(LynxOptions, u)
-				cmd := exec.CommandContext(ctx, "lynx", opts...)
-				b, err := cmd.Output()
 				tm.ID = id
 				if err == nil {
-					tm.Output = string(b)
+					tm.Output = str
 				} else {
 					tm.Err = err
 				}
