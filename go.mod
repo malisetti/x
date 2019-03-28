@@ -13,7 +13,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/olekukonko/tablewriter v0.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
-	github.com/rs/cors v1.6.0
 	github.com/snabb/sitemap v1.0.0
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
