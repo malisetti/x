@@ -12,8 +12,6 @@ import (
 	"math/rand"
 	"os"
 
-	// "os/exec"
-
 	"net/http"
 	"time"
 
@@ -172,11 +170,13 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(
-		http.StripPrefix("/static/",
-			http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
+	r.HandleFunc("/hello", func(rw http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(rw, "hello world")
+	})
 
-	r.Handle("/", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.RootHandler(fetchItems, &tstore))))).Methods(http.MethodGet, http.MethodOptions)
+	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.JSONHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
+
+	r.Handle("/html", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.HTMLHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
 
 	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.SitemapHandler(fetchItems, &key)))).Methods(http.MethodGet)
 
@@ -187,6 +187,8 @@ func main() {
 	if conf.HaveRobotsTxt {
 		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
 	}
+
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
 
 	http.Handle("/", r)
 

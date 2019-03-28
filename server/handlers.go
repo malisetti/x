@@ -16,16 +16,9 @@ import (
 	"github.com/snabb/sitemap"
 )
 
-// RootHandler serves /
-func RootHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *app.TempStore) http.HandlerFunc {
+// JSONHandler serves /json
+func JSONHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *app.TempStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-
-		if r.Method == "OPTIONS" {
-			return
-		}
 		t, err := strconv.Atoi(r.URL.Query().Get("t"))
 		var since time.Time
 		if err != nil || t <= 8 {
@@ -42,26 +35,41 @@ func RootHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *
 			return
 		}
 
-		requestedContentType := strings.ToLower(strings.TrimSpace(r.Header.Get("Content-Type")))
-		accept := strings.ToLower(strings.TrimSpace(r.Header.Get("Accept")))
-		if strings.Contains(requestedContentType, "application/json") && strings.Contains(accept, "application/json") {
-			w.Header().Set("Content-Type", "application/json")
-			err = json.NewEncoder(w).Encode(items)
-			if err != nil {
-				log.Println(err)
-			}
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(items)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+// HTMLHandler serves /html
+func HTMLHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *app.TempStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t, err := strconv.Atoi(r.URL.Query().Get("t"))
+		var since time.Time
+		if err != nil || t <= 8 {
+			since = time.Now().Add(-1 * app.EightHrs)
+		} else if t > 8 && t <= 16 {
+			since = time.Now().Add(-2 * app.EightHrs)
 		} else {
-			func() {
-				tstore.RLock()
-				defer tstore.RUnlock()
-				data := make(map[string]interface{})
-				data["bgColor"] = tstore.BgColor
-				data["items"] = items
-				err = tstore.Tmpl.Execute(w, data)
-				if err != nil {
-					log.Println(err)
-				}
-			}()
+			since = time.Now().Add(-3 * app.EightHrs)
+		}
+
+		items, err := fetchItems(since)
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			return
+		}
+
+		tstore.RLock()
+		defer tstore.RUnlock()
+		data := make(map[string]interface{})
+		data["bgColor"] = tstore.BgColor
+		data["items"] = items
+		err = tstore.Tmpl.Execute(w, data)
+		if err != nil {
+			log.Println(err)
 		}
 	}
 }
