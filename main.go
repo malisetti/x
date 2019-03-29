@@ -179,9 +179,9 @@ func main() {
 		allowedMethods = append(allowedMethods, http.MethodOptions)
 	}
 
-	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.JSONHandler(fetchItems, &tstore, conf.EnableCors))))).Methods(allowedMethods...)
+	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.JSONHandler(fetchItems, &tstore, conf.EnableCors)))).Methods(allowedMethods...)
 
-	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.HTMLHandler(fetchItems, &tstore))))).Methods(http.MethodGet)
+	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.HTMLHandler(fetchItems, &tstore)))).Methods(http.MethodGet)
 
 	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.SitemapHandler(fetchItems, &key)))).Methods(http.MethodGet)
 
