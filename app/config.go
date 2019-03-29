@@ -11,6 +11,7 @@ type Config struct {
 	RateLimit          string `json:"rateLimit"`
 	RobotsTextFilePath string `json:"robotsTxtPath"`
 
+	EnableCors    bool `json:"enableCors"`
 	HaveRobotsTxt bool `json:"haveRobotsTxt"`
 	TweetItems    bool `json:"tweetItems"`
 	PingGoogle    bool `json:"pingGoogle"`

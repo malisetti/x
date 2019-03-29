@@ -17,14 +17,16 @@ import (
 )
 
 // JSONHandler serves /json
-func JSONHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *app.TempStore) http.HandlerFunc {
+func JSONHandler(fetchItems func(since time.Time) ([]*app.Item, error), tstore *app.TempStore, enableCors bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if enableCors {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
-		if r.Method == "OPTIONS" {
-			return
+			if r.Method == "OPTIONS" {
+				return
+			}
 		}
 		t, err := strconv.Atoi(r.URL.Query().Get("t"))
 		var since time.Time
