@@ -96,3 +96,13 @@ body {
   justify-content: space-between;
   align-items: center;
 }
+
+.card-discuss-container {
+  display: flex;
+  align-items: center;
+}
+
+.discuss-link {
+  margin-left: 10px;
+  text-decoration: underline;
+}

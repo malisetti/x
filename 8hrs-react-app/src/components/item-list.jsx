@@ -1,33 +1,36 @@
 import React from 'react'
 
 import { Card, Elevation, Button } from '@blueprintjs/core'
+import { DISCUSS } from '../constants'
 
 const ListItem= ({ item, index, onPinClick }) => (
   <Card
     className='list-item-card'
     elevation={Elevation.TWO}
     key={item.id}
-    onClick={() => window.open(item.url, '_blank')}
   >
     <div className='card-title'>
-      <h4>
+      <div className='card-discuss-container'>
+        <h4>
+          <a
+            href={item.url}
+            ping={item.encryptedURL}
+            target='_blank'
+          >
+            {item.title}
+            <span className='domain-text'>{` (${item.domain})`}</span>
+          </a>
+        </h4>
         <a
-          href='#'
-          onClick={(e) => e.preventDefault()}
+          className='discuss-link'
+          href={item.discussLink}
+          ping={item.encryptedDiscussLink}
+          target='_blank'
         >
-          {item.title}
-          <span className='domain-text'>{` (${item.domain})`}</span>
+          {DISCUSS}
         </a>
-      </h4>
+      </div>
       <div className='action-group'>
-        <Button
-          className='action-button'
-          icon="comment"
-          onClick={(e) => {
-            e.stopPropagation()
-            window.open(item.discussLink, '_blank')
-          }}
-        />
         <Button
           className='action-button'
           icon="pin"
