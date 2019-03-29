@@ -175,18 +175,20 @@ func Flow(ctx context.Context, tstore *app.TempStore, db *sql.DB, conf *app.Conf
 		}
 	}
 
-	lynxOutput := hn.VisitAndGetDescription(ctx, idsToURLs)
+	if conf.FetchPreviews {
+		lynxOutput := hn.VisitAndGetDescription(ctx, idsToURLs)
 
-	for lo := range lynxOutput {
-		for _, it := range items {
-			if it.ID != lo.ID {
-				continue
-			}
-			if lo.Err == nil {
-				it.Description = lo.Output
-			}
+		for lo := range lynxOutput {
+			for _, it := range items {
+				if it.ID != lo.ID {
+					continue
+				}
+				if lo.Err == nil {
+					it.Description = lo.Output
+				}
 
-			break
+				break
+			}
 		}
 	}
 
