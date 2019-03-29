@@ -3,7 +3,7 @@
     "encKey": "52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649",
     "indexTemplatePath": "/Users/Akhil/Files/8hrs/x/index.html",
     "appDatabasePath": "/Users/Akhil/Files/8hrs/x/app.db",
-    "staticResourcesDirPath": "/Users/Akhil/Files/8hrs/x/static/",
+    "staticResourcesDirPath": "/Users/Akhil/Files/8hrs/x/build/",
     "robotsTxtPath": "/Users/Akhil/Files/8hrs/x/robots.txt",
     "rateLimit": "50-M",
     "tweetItems": false,

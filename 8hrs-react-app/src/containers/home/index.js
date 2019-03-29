@@ -5,7 +5,7 @@ import { connect } from 'react-redux'
 import { Switch, ProgressBar } from '@blueprintjs/core'
 
 import * as DataActions from '../../actions/data.actions'
-import { TITLE, REVERSE, PIN_FILTERS } from '../../constants'
+import { TITLE, REVERSE, PIN_FILTERS, VISIT_CLASSIC } from '../../constants'
 
 import ItemList from '../../components/item-list'
 import TimeFrames from '../../components/time-frames'
@@ -44,7 +44,10 @@ class Home extends React.Component {
     const itemsToDisplay = pinFilter === PIN_FILTERS[0] ? items : pinnedItems
     return (
       <div>
-        <h1>{TITLE}</h1>
+        <div className='title-goto-classic'>
+          <h1>{TITLE}</h1>
+          <a href='/classic'>{VISIT_CLASSIC}</a>
+        </div>
         <div className='filter-container'>
           <TimeFrames
             value={timeFrame}

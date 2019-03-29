@@ -89,3 +89,10 @@ body {
 .no-border {
   outline: none;
 }
+
+.title-goto-classic {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
