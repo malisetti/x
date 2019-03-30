@@ -105,4 +105,6 @@ body {
 .discuss-link {
   margin-left: 10px;
   text-decoration: underline;
+  white-space: nowrap;
+  overflow: visible;
 }
