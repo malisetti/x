@@ -68,7 +68,7 @@ body {
 }
 
 .list-item-card {
-  padding: 0 10px 10px 20px;
+  padding: 10px 10px 10px 20px;
   margin: 10px 0;
 }
 
@@ -100,10 +100,11 @@ body {
 .card-discuss-container {
   display: flex;
   align-items: center;
+  padding: 10px 0;
 }
 
 .discuss-link {
-  margin-left: 10px;
+  margin-left: 5px;
   text-decoration: underline;
   white-space: nowrap;
   overflow: visible;

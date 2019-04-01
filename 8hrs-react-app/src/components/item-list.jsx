@@ -11,23 +11,22 @@ const ListItem= ({ item, index, onPinClick }) => (
   >
     <div className='card-title'>
       <div className='card-discuss-container'>
-        <h4>
-          <a
-            href={item.url}
-            ping={item.encryptedURL}
-            target='_blank'
-          >
-            {item.title}
-            <span className='domain-text'>{` (${item.domain})`}</span>
-          </a>
-        </h4>
         <a
-          className='discuss-link'
-          href={item.discussLink}
-          ping={item.encryptedDiscussLink}
+          href={item.url}
+          ping={item.encryptedURL}
           target='_blank'
         >
-          {DISCUSS}
+          {item.title}
+          <span className='domain-text'>{` (${item.domain})`}</span>
+          <span
+            className='discuss-link'
+            onClick={(e) => {
+              e.stopPropagation()
+              window.open(item.discussLink, '_blank')
+            }}
+          >
+            {DISCUSS}
+          </span>
         </a>
       </div>
       <div className='action-group'>
