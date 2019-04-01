@@ -18,15 +18,13 @@ const ListItem= ({ item, index, onPinClick }) => (
         >
           {item.title}
           <span className='domain-text'>{` (${item.domain})`}</span>
-          <span
+        </a>
+        <a
             className='discuss-link'
-            onClick={(e) => {
-              e.stopPropagation()
-              window.open(item.discussLink, '_blank')
-            }}
-          >
-            {DISCUSS}
-          </span>
+            href={item.discussLink}
+            target='_blank'
+        >
+            <i>{DISCUSS}</i>
         </a>
       </div>
       <div className='action-group'>
