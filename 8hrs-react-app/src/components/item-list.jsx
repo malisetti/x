@@ -13,7 +13,7 @@ const ListItem= ({ item, index, onPinClick }) => (
       <div className='card-discuss-container'>
         <a
           href={item.url}
-          ping={item.encryptedURL}
+          ping={`/l/${item.encryptedURL}` }
           target='_blank'
         >
           {item.title}
