@@ -47,16 +47,6 @@ func main() {
 		return
 	}
 
-	// TODO: fails currently
-	// if conf.FetchPreviews {
-	// 	cmd := exec.Command("command", "-v", "lynx")
-	// 	_, err := cmd.Output()
-	// 	if err != nil {
-	// 		log.Printf("looking for lynx with 'command -v lynx' failed with %s\n", err)
-	// 		return
-	// 	}
-	// }
-
 	keyBytes, err := hex.DecodeString(conf.EncryptKey)
 	if err != nil {
 		log.Println("ENC_KEY is not hex decodable")

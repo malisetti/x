@@ -182,7 +182,8 @@ func VisitAndGetDescription(ctx context.Context, idsToURLs map[int]string) <-cha
 					continue
 				}
 				contentType := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Type")))
-				if !(strings.Contains(contentType, "text/html") || strings.Contains(contentType, "text/plain")) {
+				if !((strings.Contains(contentType, "html")) || (strings.Contains(contentType, "text"))) {
+					log.Println(strings.Contains(contentType, "html"))
 					log.Printf("could not visit %s with content type %s\n", u, contentType)
 					continue
 				}

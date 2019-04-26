@@ -7,15 +7,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/JesusIslam/tldr"
 	"github.com/mseshachalam/x/app"
 	"github.com/mseshachalam/x/dbp"
 	"github.com/mseshachalam/x/encrypt"
 	"github.com/mseshachalam/x/hn"
 	"github.com/mseshachalam/x/twitter"
 	"github.com/mseshachalam/x/util"
+	"gopkg.in/jdkato/prose.v2"
 )
 
 // Flow is the logic of application
@@ -176,6 +179,7 @@ func Flow(ctx context.Context, tstore *app.TempStore, db *sql.DB, conf *app.Conf
 	}
 
 	if conf.FetchPreviews {
+		intoSentences := 3
 		lynxOutput := hn.VisitAndGetDescription(ctx, idsToURLs)
 
 		for lo := range lynxOutput {
@@ -183,9 +187,57 @@ func Flow(ctx context.Context, tstore *app.TempStore, db *sql.DB, conf *app.Conf
 				if it.ID != lo.ID {
 					continue
 				}
+
+				var sents []string
+				var text string
 				if lo.Err == nil {
-					it.Description = lo.Output
+					doc, err := prose.NewDocument(lo.Output)
+					if err == nil {
+						totalLength := 0
+						for _, sent := range doc.Sentences() {
+							totalLength += len(sent.Text)
+							sents = append(sents, sent.Text)
+						}
+
+						avgLen := totalLength / len(sents)
+						log.Println(avgLen)
+						log.Println("======================")
+						for _, sent := range sents {
+							if len(sent) < avgLen {
+								continue
+							}
+							parts := strings.Split(sent, "\n")
+							add := true
+							if len(parts) > 4 {
+								for _, part := range parts {
+									if len(part) < avgLen && add {
+										add = false
+									} else {
+										add = true
+									}
+								}
+							}
+							if add {
+								text = fmt.Sprintf("%s\n%s", sent, text)
+							}
+						}
+					}
 				}
+
+				log.Println(text)
+
+				text = strings.TrimSpace(text)
+				if len(text) == 0 {
+					continue
+				}
+
+				bag := tldr.New()
+				result, err := bag.Summarize(text, intoSentences)
+				if err == nil {
+					it.Textx = strings.Join(result, "\n")
+				}
+
+				it.Description = lo.Output
 
 				break
 			}

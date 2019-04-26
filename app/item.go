@@ -7,7 +7,7 @@ type Item struct {
 	//By is the username of the item's author.
 	By string `json:"by"`
 	//Textx is comment, story or poll text. HTML.
-	Textx string `json:"-"`
+	Textx string `json:"textx"`
 	//Title of the story, poll or job.
 	Title string `json:"title"`
 	//URL of the story.
