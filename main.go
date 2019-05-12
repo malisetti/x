@@ -20,6 +20,7 @@ import (
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
+	"github.com/lestrrat-go/apache-logformat"
 
 	"github.com/ChimeraCoder/anaconda"
 	_ "github.com/mattn/go-sqlite3"
@@ -194,8 +195,8 @@ func main() {
 	}
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
-
-	http.Handle("/", r)
+	
+	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", conf.HTTPPort),
