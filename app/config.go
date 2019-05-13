@@ -13,12 +13,6 @@ type Config struct {
 
 	EnableCors    bool `json:"enableCors"`
 	HaveRobotsTxt bool `json:"haveRobotsTxt"`
-	TweetItems    bool `json:"tweetItems"`
 	PingGoogle    bool `json:"pingGoogle"`
 	FetchPreviews bool `json:"fetchPreviews"`
-
-	TwitterAccessToken       string `json:"twitterAccessToken"`
-	TwitterAccessTokenSecret string `json:"twitterAccessTokenSecret"`
-	TwitterConsumerAPIKey    string `json:"twitterConsumerAPIKey"`
-	TwitterConsumerSecretKey string `json:"twitterConsumerSecretKey"`
 }

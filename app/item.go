@@ -30,6 +30,4 @@ type Item struct {
 
 	//Description of the item.
 	Description string `json:"-"`
-	//TweetID of the item.
-	TweetID int64 `json:"-"`
 }

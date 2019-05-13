@@ -17,17 +17,15 @@ import (
 
 	"github.com/gorilla/mux"
 
+	apachelog "github.com/lestrrat-go/apache-logformat"
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	sim "github.com/ulule/limiter/v3/drivers/store/memory"
-	"github.com/lestrrat-go/apache-logformat"
 
-	"github.com/ChimeraCoder/anaconda"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/mseshachalam/x/app"
 	"github.com/mseshachalam/x/dbp"
-	"github.com/mseshachalam/x/flow"
 	"github.com/mseshachalam/x/hn"
 	"github.com/mseshachalam/x/server"
 )
@@ -38,7 +36,7 @@ func main() {
 	configFilePath := os.Getenv("APP_CONFIG_PATH")
 	f, err := os.Open(configFilePath)
 	if err != nil {
-		log.Printf("unable to open %s: failed with error %s", configFilePath, err.Error())
+		log.Printf("unable to open '%s' given by '%s' env: failed with error %s", configFilePath, "APP_CONFIG_PATH", err.Error())
 		return
 	}
 	dec := json.NewDecoder(f)
@@ -47,16 +45,6 @@ func main() {
 		log.Println(err)
 		return
 	}
-
-	// TODO: fails currently
-	// if conf.FetchPreviews {
-	// 	cmd := exec.Command("command", "-v", "lynx")
-	// 	_, err := cmd.Output()
-	// 	if err != nil {
-	// 		log.Printf("looking for lynx with 'command -v lynx' failed with %s\n", err)
-	// 		return
-	// 	}
-	// }
 
 	keyBytes, err := hex.DecodeString(conf.EncryptKey)
 	if err != nil {
@@ -86,11 +74,6 @@ func main() {
 
 	tstore.BgColor = app.BgColors[rand.Intn(len(app.BgColors))]
 
-	var tapi *anaconda.TwitterApi
-	if conf.TweetItems {
-		tapi = anaconda.NewTwitterApiWithCredentials(conf.TwitterAccessToken, conf.TwitterAccessTokenSecret, conf.TwitterConsumerAPIKey, conf.TwitterConsumerSecretKey)
-	}
-
 	db, err := sql.Open("sqlite3", conf.AppDatabasePath)
 	if err != nil {
 		log.Println(err)
@@ -112,35 +95,25 @@ func main() {
 		return
 	}
 
-	errs := dbp.UpdateItemsTable(db, dbp.AddByColumn, dbp.AddTextxColumn, dbp.AddDescColumn, dbp.AddTweetIDColumn, dbp.AddEncLink, dbp.AddEncDiscussLink)
+	errs := dbp.UpdateItemsTable(db, dbp.AddByColumn, dbp.AddTextxColumn, dbp.AddDescColumn, dbp.AddEncLink, dbp.AddEncDiscussLink)
 	for _, err = range errs {
 		log.Println(err)
 	}
 
-	rlMiddleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
-
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tctx, tcancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer tcancel()
+	hnMaintainer := &hn.HackerNewsMaintainer{
+		PediodicBringer: &hn.HackerNewsPeriodicBringer{
+			Ctx:      ctx,
+			Interval: 2 * time.Minute,
+		},
+		Storage: db,
+		Ctx:     ctx,
+		Key:     &key,
+	}
 
-	go flow.Flow(tctx, &tstore, db, conf, tapi, &key)
-
-	go func() {
-		sixMinTicker := time.NewTicker(6 * time.Minute)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-sixMinTicker.C:
-				tctx, tcancel := context.WithTimeout(ctx, 5*time.Minute)
-				defer tcancel()
-				flow.Flow(tctx, &tstore, db, conf, tapi, &key)
-			}
-		}
-	}()
+	go hnMaintainer.Maintain()
 
 	go func() {
 		eightHrsTicker := time.NewTicker(app.EightHrs)
@@ -171,31 +144,30 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/hello", func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(rw, "hello world")
-	})
 
 	allowedMethods := []string{http.MethodGet}
 	if conf.EnableCors {
 		allowedMethods = append(allowedMethods, http.MethodOptions)
 	}
 
-	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.JSONHandler(fetchItems, &tstore, conf.EnableCors)))).Methods(allowedMethods...)
+	rlMiddleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
-	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.HTMLHandler(fetchItems, &tstore)))).Methods(http.MethodGet)
+	r.Handle("/json", rlMiddleware.Handler(server.JSONHandler(fetchItems, &tstore, conf.EnableCors))).Methods(allowedMethods...)
 
-	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.SitemapHandler(fetchItems, &key)))).Methods(http.MethodGet)
+	r.Handle("/classic", rlMiddleware.Handler(server.HTMLHandler(fetchItems, &tstore))).Methods(http.MethodGet)
 
-	r.Handle("/feed/{type}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FeedHandler(fetchItems)))).Methods(http.MethodGet)
+	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.SitemapHandler(fetchItems, &key))).Methods(http.MethodGet)
 
-	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.LinkHandler(&key))))).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/feed/{type}", rlMiddleware.Handler(server.FeedHandler(fetchItems))).Methods(http.MethodGet)
+
+	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithBotsAndCrawlersBlocking(server.LinkHandler(&key)))).Methods(http.MethodGet, http.MethodPost)
 
 	if conf.HaveRobotsTxt {
-		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
+		r.Handle("/robots.txt", rlMiddleware.Handler(server.FileHandler(conf.RobotsTextFilePath))).Methods(http.MethodGet)
 	}
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
-	
+
 	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
 
 	srv := &http.Server{

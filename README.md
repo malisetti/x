@@ -22,7 +22,3 @@ there is one http endpoint.
 http rate limiting middleware is used to limit requests to 5 per minute.
 
 this whole flow of the app depends on the hacker news apis.
-
-it also tweets the news items to twitter.
-
-Previous code was at github.com/mseshachalam/x8h which did not use any database.

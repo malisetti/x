@@ -17,14 +17,22 @@ var CrawlerAliases = []string{"bot", "crawler", "spider", "trendsmapresolver", "
 // WithRequestHeadersLogging logs headers from RequiredHeaders
 func WithRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Visiting : %s with method : %s\n", r.URL.RequestURI(), r.Method)
+		headers := []string{
+			"Visiting", r.URL.RequestURI(), "Method", r.Method,
+		}
 		for _, h := range RequiredHeaders {
-			log.Printf("%s : %s\n", h, r.Header.Get(h))
+			v := r.Header.Get(h)
+			if v == "" {
+				continue
+			}
+			headers = append(headers, h, v)
 		}
 		ip := util.RealIP(r)
 		if ip != "" {
-			log.Printf("Real IP : %s\n", ip)
+			headers = append(headers, "Real IP", ip)
 		}
+
+		log.Println(strings.Join(headers, " - "))
 
 		next.ServeHTTP(w, r)
 	}
