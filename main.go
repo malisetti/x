@@ -106,7 +106,7 @@ func main() {
 	hnMaintainer := &hn.HackerNewsMaintainer{
 		PediodicBringer: &hn.HackerNewsPeriodicBringer{
 			Ctx:      ctx,
-			Interval: 2 * time.Minute,
+			Interval: 5 * time.Minute,
 		},
 		Storage: db,
 		Ctx:     ctx,
