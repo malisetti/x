@@ -152,18 +152,24 @@ func main() {
 
 	rlMiddleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
-	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.JSONHandler(fetchItems, &tstore, conf.EnableCors)))).Methods(allowedMethods...)
+	handlers := &server.Server{
+		Storage:    db,
+		FetchItems: fetchItems,
+		TStore:     &tstore,
+	}
 
-	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.HTMLHandler(fetchItems, &tstore)))).Methods(http.MethodGet)
+	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.JSONHandler(conf.EnableCors)))).Methods(allowedMethods...)
 
-	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.SitemapHandler(fetchItems, &key)))).Methods(http.MethodGet)
+	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.HTMLHandler()))).Methods(http.MethodGet)
 
-	r.Handle("/feed/{type}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FeedHandler(fetchItems)))).Methods(http.MethodGet)
+	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.SitemapHandler(&key)))).Methods(http.MethodGet)
 
-	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(server.LinkHandler(&key))))).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/feed/{type}", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FeedHandler()))).Methods(http.MethodGet)
+
+	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(handlers.LinkHandler(&key))))).Methods(http.MethodGet, http.MethodPost)
 
 	if conf.HaveRobotsTxt {
-		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
+		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
 	}
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
