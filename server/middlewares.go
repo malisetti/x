@@ -9,7 +9,7 @@ import (
 )
 
 // RequiredHeaders are the headers we need to care about
-var RequiredHeaders = []string{"User-Agent", "Cf-Ipcountry", "Accept", "Cf-Connecting-Ip", "X-Forwarded-For", "Content-Type"}
+var RequiredHeaders = []string{"Cf-Ipcountry", "Cf-Connecting-Ip", "X-Forwarded-For"}
 
 // CrawlerAliases are the names of possible crawler's user agents
 var CrawlerAliases = []string{"bot", "crawler", "spider", "trendsmapresolver", "fetcher"}
@@ -17,9 +17,7 @@ var CrawlerAliases = []string{"bot", "crawler", "spider", "trendsmapresolver", "
 // WithRequestHeadersLogging logs headers from RequiredHeaders
 func WithRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		headers := []string{
-			"Visiting", r.URL.RequestURI(), "Method", r.Method,
-		}
+		headers := []string{}
 		for _, h := range RequiredHeaders {
 			v := r.Header.Get(h)
 			if v == "" {
@@ -28,11 +26,12 @@ func WithRequestHeadersLogging(next http.HandlerFunc) http.HandlerFunc {
 			headers = append(headers, h, v)
 		}
 		ip := util.RealIP(r)
-		if ip != "" {
-			headers = append(headers, "Real IP", ip)
+		if ip != "" && len(headers) > 0 {
+			headers = append(headers, "Real-IP", ip)
 		}
-
-		log.Println(strings.Join(headers, " - "))
+		if len(headers) > 0 {
+			log.Println(strings.Join(headers, " - "))
+		}
 
 		next.ServeHTTP(w, r)
 	}
