@@ -26,10 +26,17 @@ const (
 
 // SetupTables creates items table
 func SetupTables(db *sql.DB) error {
-	stmt := "CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT)"
+	stmts := []string{
+		"CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT)",
+	}
 
-	_, err := db.Exec(stmt)
-	return err
+	for _, stmt := range stmts {
+		_, err := db.Exec(stmt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UpdateItemsTable executes stmts on db
