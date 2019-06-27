@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"math/rand"
@@ -15,8 +14,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
+	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/gorilla/mux"
 	apachelog "github.com/lestrrat-go/apache-logformat"
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
@@ -176,11 +176,21 @@ func main() {
 
 	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%s", conf.HTTPPort),
-		ReadTimeout:  2 * time.Second,
-		WriteTimeout: 2 * time.Second,
+	m := autocert.Manager{
+		Email:      "abbiya@gmail.com",
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist("8hrs.xyz"),
+		Cache:      autocert.DirCache(conf.AutoCertCacheDir),
 	}
 
-	log.Println(srv.ListenAndServe())
+	srv := &http.Server{
+		Addr:           ":https",
+		Handler:        r,
+		ReadTimeout:    2 * time.Second,
+		WriteTimeout:   2 * time.Second,
+		MaxHeaderBytes: (1 << 20) / 10,
+		TLSConfig:      m.TLSConfig(),
+	}
+
+	log.Println(srv.ListenAndServeTLS("", ""))
 }

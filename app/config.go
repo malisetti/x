@@ -2,6 +2,7 @@ package app
 
 // Config is required configuration for app
 type Config struct {
+	AutoCertCacheDir             string `json:"autoCertCacheDir"`
 	HTTPPort                     string `json:"HTTPPort"`
 	EncryptKey                   string `json:"encKey"`
 	IndexTemplatePath            string `json:"indexTemplatePath"`
