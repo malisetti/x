@@ -192,5 +192,5 @@ func main() {
 		TLSConfig:      m.TLSConfig(),
 	}
 
-	log.Println(srv.ListenAndServeTLS("", ""))
+	log.Fatalln(srv.ListenAndServeTLS("", ""))
 }
