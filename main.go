@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"os"
 
+	"fmt"
 	"net/http"
 	"time"
 
@@ -176,6 +177,17 @@ func main() {
 
 	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
 
+	srv := &http.Server{
+		Addr:           fmt.Sprintf(":%s", conf.HTTPPort),
+		ReadTimeout:    2 * time.Second,
+		WriteTimeout:   2 * time.Second,
+		MaxHeaderBytes: (1 << 20) / 10,
+	}
+
+	go func() {
+		log.Println(srv.ListenAndServe())
+	}()
+
 	m := autocert.Manager{
 		Email:      "abbiya@gmail.com",
 		Prompt:     autocert.AcceptTOS,
@@ -183,7 +195,7 @@ func main() {
 		Cache:      autocert.DirCache(conf.AutoCertCacheDir),
 	}
 
-	srv := &http.Server{
+	tlsSrv := &http.Server{
 		Addr:           ":https",
 		Handler:        r,
 		ReadTimeout:    2 * time.Second,
@@ -192,5 +204,5 @@ func main() {
 		TLSConfig:      m.TLSConfig(),
 	}
 
-	log.Fatalln(srv.ListenAndServeTLS("", ""))
+	log.Fatalln(tlsSrv.ListenAndServeTLS("", ""))
 }
