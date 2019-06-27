@@ -2,6 +2,7 @@ package app
 
 // Config is required configuration for app
 type Config struct {
+	RunHTTPS                     bool   `json:"runHTTPS"`
 	AutoCertCacheDir             string `json:"autoCertCacheDir"`
 	HTTPPort                     string `json:"HTTPPort"`
 	EncryptKey                   string `json:"encKey"`

@@ -188,21 +188,23 @@ func main() {
 		log.Println(srv.ListenAndServe())
 	}()
 
-	m := autocert.Manager{
-		Email:      "abbiya@gmail.com",
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist("8hrs.xyz"),
-		Cache:      autocert.DirCache(conf.AutoCertCacheDir),
-	}
+	if conf.RunHTTPS {
+		m := autocert.Manager{
+			Email:      "abbiya@gmail.com",
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist("8hrs.xyz"),
+			Cache:      autocert.DirCache(conf.AutoCertCacheDir),
+		}
 
-	tlsSrv := &http.Server{
-		Addr:           ":https",
-		Handler:        r,
-		ReadTimeout:    2 * time.Second,
-		WriteTimeout:   2 * time.Second,
-		MaxHeaderBytes: (1 << 20) / 10,
-		TLSConfig:      m.TLSConfig(),
-	}
+		tlsSrv := &http.Server{
+			Addr:           ":https",
+			Handler:        r,
+			ReadTimeout:    2 * time.Second,
+			WriteTimeout:   2 * time.Second,
+			MaxHeaderBytes: (1 << 20) / 10,
+			TLSConfig:      m.TLSConfig(),
+		}
 
-	log.Fatalln(tlsSrv.ListenAndServeTLS("", ""))
+		log.Fatalln(tlsSrv.ListenAndServeTLS("", ""))
+	}
 }
