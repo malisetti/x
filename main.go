@@ -184,10 +184,6 @@ func main() {
 		MaxHeaderBytes: (1 << 20) / 10,
 	}
 
-	go func() {
-		log.Println(srv.ListenAndServe())
-	}()
-
 	if conf.RunHTTPS {
 		m := autocert.Manager{
 			Email:      "abbiya@gmail.com",
@@ -205,6 +201,10 @@ func main() {
 			TLSConfig:      m.TLSConfig(),
 		}
 
-		log.Fatalln(tlsSrv.ListenAndServeTLS("", ""))
+		go func() {
+			log.Fatalln(tlsSrv.ListenAndServeTLS("", ""))
+		}()
 	}
+
+	log.Println(srv.ListenAndServe())
 }
