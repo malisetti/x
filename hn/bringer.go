@@ -82,7 +82,7 @@ func (hnpb *HackerNewsPeriodicBringer) Bring() <-chan app.Bringer {
 				out <- hnb
 			case <-hnpb.Ctx.Done():
 				close(out)
-				break
+				return
 			}
 		}
 	}()
