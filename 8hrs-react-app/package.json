@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "prettier": "1.16.4",
-    "react-scripts": "2.1.8"
+    "react-scripts": "^3.0.1"
   },
   "dependencies": {
     "@blueprintjs/core": "^3.14.1",

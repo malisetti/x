@@ -10,6 +10,9 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"fmt"
 	"net/http"
@@ -177,11 +180,15 @@ func main() {
 
 	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
 
+	var wg sync.WaitGroup
+
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%s", conf.HTTPPort),
 		ReadTimeout:    2 * time.Second,
 		WriteTimeout:   2 * time.Second,
+		IdleTimeout:    2 * time.Second,
 		MaxHeaderBytes: (1 << 20) / 10,
+		Handler:        r,
 	}
 
 	if conf.RunHTTPS {
@@ -192,19 +199,54 @@ func main() {
 			Cache:      autocert.DirCache(conf.AutoCertCacheDir),
 		}
 
-		tlsSrv := &http.Server{
-			Addr:           ":https",
-			Handler:        r,
-			ReadTimeout:    2 * time.Second,
-			WriteTimeout:   2 * time.Second,
-			MaxHeaderBytes: (1 << 20) / 10,
-			TLSConfig:      m.TLSConfig(),
-		}
+		srv.Addr = ":443"
+		srv.TLSConfig = m.TLSConfig()
 
 		go func() {
-			log.Fatalln(tlsSrv.ListenAndServeTLS("", ""))
+			wg.Add(1)
+			defer wg.Done()
+			err := srv.ListenAndServeTLS("", "")
+			if err == http.ErrServerClosed {
+				err = nil
+			}
+			if err != nil {
+				fmt.Printf("Failed to start https, error: %s\n", err)
+			} else {
+				fmt.Printf("HTTPS server shutdown gracefully\n")
+			}
 		}()
+
+		srv.Handler = m.HTTPHandler(srv.Handler)
 	}
 
-	log.Println(srv.ListenAndServe())
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		err := srv.ListenAndServe()
+		// mute error caused by Shutdown()
+		if err == http.ErrServerClosed {
+			err = nil
+		}
+		if err != nil {
+			log.Printf("Failed to start http, error: %s\n", err)
+		} else {
+			log.Printf("HTTP server shutdown gracefully\n")
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt /* SIGINT */, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
+
+	for {
+		select {
+		case sig := <-c:
+			log.Printf("Got signal %s\n", sig)
+			if srv != nil {
+				srv.Shutdown(context.Background())
+			}
+		default:
+			wg.Wait()
+			return
+		}
+	}
 }

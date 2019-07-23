@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/mseshachalam/x/app"
 )
@@ -81,4 +82,22 @@ func RealIP(r *http.Request) string {
 	}
 
 	return ra
+}
+
+func makeHTTPToHTTPSRedirectServer() *http.Server {
+	mux := &http.ServeMux{}
+
+	handleRedirect := func(w http.ResponseWriter, req *http.Request) {
+		newURI := "https://" + req.Host + req.URL.String()
+		http.Redirect(w, req, newURI, http.StatusFound)
+	}
+
+	mux.HandleFunc("/", handleRedirect)
+	srv := &http.Server{
+		ReadTimeout:  2 * time.Second,
+		WriteTimeout: 2 * time.Second,
+		IdleTimeout:  2 * time.Second,
+		Handler:      mux,
+	}
+	return srv
 }
