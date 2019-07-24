@@ -24,12 +24,13 @@ const (
 	AddEncDiscussLink = "ALTER TABLE items ADD COLUMN `encDiscussLink` TEXT;"
 )
 
-// SetupTables creates items table
-func SetupTables(db *sql.DB) error {
-	stmts := []string{
-		"CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT)",
-	}
+// CreateTablesStmts contains needed sql stmts to setup required tables
+var CreateTablesStmts = []string{
+	"CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT)",
+}
 
+// SetupTables creates items table
+func SetupTables(db *sql.DB, stmts []string) error {
 	for _, stmt := range stmts {
 		_, err := db.Exec(stmt)
 		if err != nil {
@@ -40,12 +41,12 @@ func SetupTables(db *sql.DB) error {
 }
 
 // UpdateItemsTable executes stmts on db
-func UpdateItemsTable(db *sql.DB, stmts ...string) []error {
-	var errs []error
+func UpdateItemsTable(db *sql.DB, stmts ...string) map[string]error {
+	errs := make(map[string]error)
 	for _, stmt := range stmts {
 		_, err := db.Exec(stmt)
 		if err != nil {
-			errs = append(errs, err)
+			errs[stmt] = err
 		}
 	}
 
@@ -60,7 +61,6 @@ func DeleteItemsWith(db *sql.DB, ids []int) error {
 	}
 
 	stmt := `DELETE FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `)`
-	stmt = fmt.Sprintf(stmt)
 	_, err := db.Exec(stmt)
 	return err
 }
@@ -73,7 +73,7 @@ func DeleteOlderItems(db *sql.DB, t int64) error {
 	return err
 }
 
-// SelectItemsIdsBefore selects items that are added after t
+// SelectItemsIdsBefore selects items that are added after t, unix timestamp
 func SelectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 	stmt := `SELECT id FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
@@ -101,7 +101,7 @@ func SelectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 
 // SelectItemsIDsAfter selects items that are added before t
 func SelectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
-	stmt := `SELECT id FROM items WHERE added >= %d`
+	stmt := `SELECT id FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	rows, err := db.Query(stmt)

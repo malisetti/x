@@ -106,8 +106,11 @@ func FetchIds(ctx context.Context, limit int) ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(ids) < limit {
+		limit = len(ids)
+	}
 
-	return ids, nil
+	return ids[:limit], nil
 }
 
 // FetchItem fetches item with itemID from HN

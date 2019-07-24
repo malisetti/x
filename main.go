@@ -96,15 +96,15 @@ func main() {
 		return
 	}
 
-	err = dbp.SetupTables(db)
+	err = dbp.SetupTables(db, dbp.CreateTablesStmts)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	errs := dbp.UpdateItemsTable(db, dbp.AddByColumn, dbp.AddTextxColumn, dbp.AddDescColumn, dbp.AddEncLink, dbp.AddEncDiscussLink)
-	for _, err = range errs {
-		log.Println(err)
+	for stmt, err := range errs {
+		log.Printf("%s \"%v\"", stmt, err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -240,7 +240,7 @@ func main() {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, os.Interrupt, os.Kill)
-	done := make(chan bool)
+	done := make(chan struct{})
 	go func() {
 		for {
 			select {
@@ -251,11 +251,11 @@ func main() {
 					cancel()
 				}
 			case <-done:
-				return
+				break
 			}
 		}
 	}()
 
 	wg.Wait()
-	done <- true
+	done <- struct{}{}
 }
