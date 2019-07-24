@@ -2,6 +2,9 @@ package app
 
 import "time"
 
+// DefaultHNFrontPageArticlesCount is now 30
+const DefaultHNFrontPageArticlesCount = 30
+
 // EightHrs in seconds
 const EightHrs = 8 * 60 * 60 * time.Second
 
