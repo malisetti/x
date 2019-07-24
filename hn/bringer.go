@@ -10,30 +10,31 @@ import (
 	"github.com/mseshachalam/x/util"
 )
 
-// HackerNewsBringer brings news from hn
-type HackerNewsBringer struct {
+// Bringer brings news from hn
+type Bringer struct {
 	NumberOfItems int
 	Ctx           context.Context
+	NWorkers      int
 }
 
 // Bring hn news
-func (hnb *HackerNewsBringer) Bring() ([]*app.Item, error) {
+func (b *Bringer) Bring() ([]*app.Item, error) {
 	itemsCh := make(chan *app.Item)
-	ids, err := FetchIds(hnb.Ctx, hnb.NumberOfItems)
+	ids, err := FetchIds(b.Ctx, b.NumberOfItems)
 	if err != nil {
 		return nil, err
 	}
 	idsCh := util.IntsToChan(ids)
 	var wg sync.WaitGroup
-	for i := 0; i < 4; i++ {
+	for i := 0; i < b.NWorkers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for id := range idsCh {
-				if hnb.Ctx.Err() != nil {
-					return
+				if b.Ctx.Err() != nil {
+					break
 				}
-				item, err := FetchItem(hnb.Ctx, id)
+				item, err := FetchItem(b.Ctx, id)
 				if err != nil {
 					log.Println(err) // warning
 					continue
@@ -45,8 +46,8 @@ func (hnb *HackerNewsBringer) Bring() ([]*app.Item, error) {
 	}
 
 	go func() {
+		defer close(itemsCh)
 		wg.Wait()
-		close(itemsCh)
 	}()
 
 	var items []*app.Item
@@ -57,29 +58,31 @@ func (hnb *HackerNewsBringer) Bring() ([]*app.Item, error) {
 	return items, nil
 }
 
-// HackerNewsPeriodicBringer implements Periodic Bringer
-type HackerNewsPeriodicBringer struct {
+// PeriodicBringer implements Periodic Bringer
+type PeriodicBringer struct {
 	Ctx      context.Context
 	Interval time.Duration
 }
 
 // Bring gives a hn bringer periodically
-func (hnpb *HackerNewsPeriodicBringer) Bring() <-chan app.Bringer {
+func (pb *PeriodicBringer) Bring() <-chan app.Bringer {
 	out := make(chan app.Bringer)
 	go func() {
-		hnb := new(HackerNewsBringer)
-		hnb.NumberOfItems = 30
-		hnb.Ctx = hnpb.Ctx
-		out <- hnb
+		defer close(out)
+		b := new(Bringer)
+		b.NumberOfItems = app.DefaultHNFrontPageArticlesCount
+		b.Ctx = pb.Ctx
+		b.NWorkers = 4
 
-		ticker := time.NewTicker(hnpb.Interval)
+		out <- b
+
+		ticker := time.NewTicker(pb.Interval)
 		for {
 			select {
 			case <-ticker.C:
-				out <- hnb
-			case <-hnpb.Ctx.Done():
-				close(out)
-				return
+				out <- b
+			case <-pb.Ctx.Done():
+				break
 			}
 		}
 	}()

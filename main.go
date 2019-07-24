@@ -62,12 +62,15 @@ func main() {
 	readTemplate := func(lockTStore bool) error {
 		tmpl := template.New("index.html")
 		tmpl, err := tmpl.ParseFiles(conf.IndexTemplatePath)
+		if err != nil {
+			return err
+		}
 		if lockTStore {
 			tstore.Lock()
 			defer tstore.Unlock()
 		}
 		tstore.Tmpl = tmpl
-		return err
+		return nil
 	}
 
 	err = readTemplate(false)
@@ -107,13 +110,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	hnMaintainer := &hn.HackerNewsMaintainer{
-		PediodicBringer: &hn.HackerNewsPeriodicBringer{
+	hnMaintainer := &hn.Maintainer{
+		Ctx:    ctx,
+		Config: conf,
+		PediodicBringer: &hn.PeriodicBringer{
 			Ctx:      ctx,
 			Interval: 5 * time.Minute,
 		},
 		Storage: db,
-		Ctx:     ctx,
 		Key:     &key,
 	}
 
@@ -124,13 +128,14 @@ func main() {
 		for {
 			select {
 			case <-ctx.Done():
-				return
+				break
 			case <-eightHrsTicker.C:
 				err := readTemplate(true)
-				rand.Seed(time.Now().Unix())
-				tstore.BgColor = app.BgColors[rand.Intn(len(app.BgColors))]
 				if err != nil {
 					log.Println(err)
+				} else {
+					rand.Seed(time.Now().Unix())
+					tstore.BgColor = app.BgColors[rand.Intn(len(app.BgColors))]
 				}
 			}
 		}
@@ -181,7 +186,6 @@ func main() {
 	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
 
 	var wg sync.WaitGroup
-
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%s", conf.HTTPPort),
 		ReadTimeout:    2 * time.Second,
@@ -202,8 +206,8 @@ func main() {
 		srv.Addr = ":443"
 		srv.TLSConfig = m.TLSConfig()
 
+		wg.Add(1)
 		go func() {
-			wg.Add(1)
 			defer wg.Done()
 			err := srv.ListenAndServeTLS("", "")
 			if err == http.ErrServerClosed {
@@ -219,8 +223,8 @@ func main() {
 		srv.Handler = m.HTTPHandler(srv.Handler)
 	}
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		err := srv.ListenAndServe()
 		// mute error caused by Shutdown()

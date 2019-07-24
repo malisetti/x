@@ -84,7 +84,8 @@ func RealIP(r *http.Request) string {
 	return ra
 }
 
-func makeHTTPToHTTPSRedirectServer() *http.Server {
+// MakeHTTPToHTTPSRedirectServer redirects http requests to https endpoints
+func MakeHTTPToHTTPSRedirectServer() *http.Server {
 	mux := &http.ServeMux{}
 
 	handleRedirect := func(w http.ResponseWriter, req *http.Request) {

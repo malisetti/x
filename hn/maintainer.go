@@ -13,17 +13,18 @@ import (
 	"github.com/mseshachalam/x/util"
 )
 
-// HackerNewsMaintainer implements Maintainer
-type HackerNewsMaintainer struct {
-	PediodicBringer *HackerNewsPeriodicBringer
-	Storage         *sql.DB
+// Maintainer implements Maintainer
+type Maintainer struct {
 	Ctx             context.Context
+	Config          *app.Config
+	PediodicBringer *PeriodicBringer
+	Storage         *sql.DB
 	Key             *[32]byte
 }
 
 // Maintain takes care of storage and updates to items
-func (hnm *HackerNewsMaintainer) Maintain() {
-	for bringer := range hnm.PediodicBringer.Bring() {
+func (m *Maintainer) Maintain() {
+	for bringer := range m.PediodicBringer.Bring() {
 		items, err := bringer.Bring()
 		if err != nil {
 			log.Println(err)
@@ -34,13 +35,13 @@ func (hnm *HackerNewsMaintainer) Maintain() {
 			ids = append(ids, item.ID)
 		}
 		// Update items to latest timestamp
-		err = dbp.UpdateItemsAddedTimeToNow(hnm.Storage, ids)
+		err = dbp.UpdateItemsAddedTimeToNow(m.Storage, ids)
 		if err != nil {
 			log.Println(err)
 		}
 
 		thirtyTwoHrsBack := time.Now().Add(-4 * app.EightHrs)
-		ids, err = dbp.SelectItemsIdsBefore(hnm.Storage, thirtyTwoHrsBack.Unix())
+		ids, err = dbp.SelectItemsIdsBefore(m.Storage, thirtyTwoHrsBack.Unix())
 		if err != nil {
 			log.Println(err)
 		}
@@ -60,13 +61,13 @@ func (hnm *HackerNewsMaintainer) Maintain() {
 			}
 		}
 
-		err = dbp.DeleteItemsWith(hnm.Storage, olderItemsIDsNotInTop)
+		err = dbp.DeleteItemsWith(m.Storage, olderItemsIDsNotInTop)
 		if err != nil {
 			log.Println(err)
 		}
 
 		eightHrsBack := time.Now().Add(-1 * app.EightHrs)
-		itemsIDsFromLastEightHrs, err := dbp.SelectItemsIDsAfter(hnm.Storage, eightHrsBack.Unix())
+		itemsIDsFromLastEightHrs, err := dbp.SelectItemsIDsAfter(m.Storage, eightHrsBack.Unix())
 		if err != nil {
 			log.Println(err)
 		}
@@ -85,7 +86,7 @@ func (hnm *HackerNewsMaintainer) Maintain() {
 			}
 		}
 
-		updatedItems, err := FetchHNStoriesOf(hnm.Ctx, olderItemsIDsInTop)
+		updatedItems, err := FetchHNStoriesOf(m.Ctx, olderItemsIDsInTop)
 		if err != nil {
 			log.Println(err)
 		}
@@ -108,7 +109,7 @@ func (hnm *HackerNewsMaintainer) Maintain() {
 			itemIDs = append(itemIDs, it.ID)
 		}
 
-		existingItems, err := dbp.SelectExistingPropsOfItemsByIDsAsc(hnm.Storage, itemIDs)
+		existingItems, err := dbp.SelectExistingPropsOfItemsByIDsAsc(m.Storage, itemIDs)
 		if err != nil {
 			log.Println(err)
 		}
@@ -153,16 +154,16 @@ func (hnm *HackerNewsMaintainer) Maintain() {
 				if link == "" {
 					link = it.DiscussLink
 				}
-				h, _ := encrypt.EncAndHex(link, hnm.Key)
+				h, _ := encrypt.EncAndHex(link, m.Key)
 				it.EncryptedURL = h
 			}
 			if it.EncryptedDiscussLink == "" {
-				h, _ := encrypt.EncAndHex(it.DiscussLink, hnm.Key)
+				h, _ := encrypt.EncAndHex(it.DiscussLink, m.Key)
 				it.EncryptedDiscussLink = h
 			}
 		}
 
-		err = dbp.InsertOrReplaceItems(hnm.Storage, items)
+		err = dbp.InsertOrReplaceItems(m.Storage, items)
 		if err != nil {
 			log.Println(err)
 		}
