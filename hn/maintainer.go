@@ -41,24 +41,9 @@ func (m *Maintainer) Maintain() {
 		}
 
 		thirtyTwoHrsBack := time.Now().Add(-4 * app.EightHrs)
-		ids, err = dbp.SelectItemsIdsBefore(m.Storage, thirtyTwoHrsBack.Unix())
+		olderItemsIDsNotInTop, err := dbp.SelectItemsIdsBeforeAndNotOf(m.Storage, thirtyTwoHrsBack.Unix(), ids)
 		if err != nil {
 			log.Println(err)
-		}
-
-		var olderItemsIDsNotInTop []int
-		for _, id := range ids {
-			there := false
-			for _, it := range items {
-				if id == it.ID {
-					there = true
-					break
-				}
-			}
-
-			if !there {
-				olderItemsIDsNotInTop = append(olderItemsIDsNotInTop, id)
-			}
 		}
 
 		err = dbp.DeleteItemsWith(m.Storage, olderItemsIDsNotInTop)
@@ -67,23 +52,9 @@ func (m *Maintainer) Maintain() {
 		}
 
 		eightHrsBack := time.Now().Add(-1 * app.EightHrs)
-		itemsIDsFromLastEightHrs, err := dbp.SelectItemsIDsAfter(m.Storage, eightHrsBack.Unix())
+		olderItemsIDsInTop, err := dbp.SelectItemsIDsAfterAndNotOf(m.Storage, eightHrsBack.Unix(), ids)
 		if err != nil {
 			log.Println(err)
-		}
-
-		var olderItemsIDsInTop []int
-		for _, id := range itemsIDsFromLastEightHrs {
-			there := false
-			for _, topIt := range items {
-				if id == topIt.ID {
-					there = true
-					break
-				}
-			}
-			if there {
-				olderItemsIDsInTop = append(olderItemsIDsInTop, id)
-			}
 		}
 
 		updatedItems, err := FetchHNStoriesOf(m.Ctx, olderItemsIDsInTop)
@@ -101,15 +72,11 @@ func (m *Maintainer) Maintain() {
 			}
 			if !there {
 				items = append(items, updatedItem)
+				ids = append(ids, updatedItem.ID)
 			}
 		}
 
-		var itemIDs []int
-		for _, it := range items {
-			itemIDs = append(itemIDs, it.ID)
-		}
-
-		existingItems, err := dbp.SelectExistingPropsOfItemsByIDsAsc(m.Storage, itemIDs)
+		existingItems, err := dbp.SelectExistingPropsOfItemsByIDsAsc(m.Storage, ids)
 		if err != nil {
 			log.Println(err)
 		}

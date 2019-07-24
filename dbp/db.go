@@ -99,6 +99,36 @@ func SelectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 	return ids, nil
 }
 
+// SelectItemsIdsBeforeAndNotOf selects items that are added after t, unix timestamp and not of ids
+func SelectItemsIdsBeforeAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) {
+	var idsStr []string
+	for _, id := range ids {
+		idsStr = append(idsStr, fmt.Sprintf("%d", id))
+	}
+	stmt := `SELECT id FROM items WHERE added >= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var oids []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		oids = append(oids, id)
+	}
+
+	return oids, nil
+}
+
 // SelectItemsIDsAfter selects items that are added before t
 func SelectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
 	stmt := `SELECT id FROM items WHERE added <= %d`
@@ -123,6 +153,36 @@ func SelectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
 	}
 
 	return ids, nil
+}
+
+// SelectItemsIDsAfterAndNotOf selects items that are added before t and not of ids
+func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) {
+	var idsStr []string
+	for _, id := range ids {
+		idsStr = append(idsStr, fmt.Sprintf("%d", id))
+	}
+	stmt := `SELECT id FROM items WHERE added <= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
+	stmt = fmt.Sprintf(stmt, t)
+
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var oids []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		oids = append(oids, id)
+	}
+
+	return oids, nil
 }
 
 // SelectItemsAfter selects items that are added after t
