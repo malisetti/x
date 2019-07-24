@@ -76,9 +76,6 @@ func (hnpb *HackerNewsPeriodicBringer) Bring() <-chan app.Bringer {
 		for {
 			select {
 			case <-ticker.C:
-				hnb := new(HackerNewsBringer)
-				hnb.NumberOfItems = 30
-				hnb.Ctx = hnpb.Ctx
 				out <- hnb
 			case <-hnpb.Ctx.Done():
 				close(out)
