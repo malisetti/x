@@ -131,6 +131,9 @@ func (m *Maintainer) Maintain() {
 							it.Domain = domain
 						}
 					}
+					if it.Source == "" {
+						it.Source = b.GetSource()
+					}
 					if it.EncryptedURL == "" {
 						link := it.URL
 						if link == "" {

@@ -28,4 +28,6 @@ type Item struct {
 
 	//Description of the item.
 	Description string `json:"description"`
+	//Source of the item
+	Source string `json:"source"`
 }

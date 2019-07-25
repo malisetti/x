@@ -24,7 +24,7 @@ const (
 
 // CreateTablesStmts contains needed sql stmts to setup required tables
 var CreateTablesStmts = []string{
-	"CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT)",
+	"CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT, `source`	TEXT)",
 }
 
 // SetupTables creates items table
@@ -185,7 +185,7 @@ func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) 
 
 // SelectItemsAfter selects items that are added after t
 func SelectItemsAfter(db *sql.DB, t int64, order bool) ([]*app.Item, error) {
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink FROM items WHERE added >= %d`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, source, by, encLink, encDiscussLink FROM items WHERE added >= %d`
 	if order {
 		stmt += " ORDER BY id ASC"
 	} else {
@@ -202,7 +202,7 @@ func SelectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, err
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, link, discussLink, domain, description, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
+	stmt := `SELECT id, link, discussLink, domain, description, source, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
@@ -212,11 +212,13 @@ func SelectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, err
 	var items []*app.Item
 	for rows.Next() {
 		var it app.Item
+		var source string
 		var description, encryptedURL, encryptedDiscussLink sql.NullString
 		err := rows.Scan(&it.ID,
 			&it.URL, &it.DiscussLink,
 			&it.Domain, &description,
-			&encryptedURL, &encryptedDiscussLink,
+			&source, &encryptedURL,
+			&encryptedDiscussLink,
 		)
 		if err != nil {
 			log.Println(err)
@@ -240,7 +242,7 @@ func SelectItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, source, by, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
 
 	return execStmtAndGetItems(db, stmt)
 }
@@ -251,7 +253,7 @@ func SelectItemsByIDsDesc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, source, by, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
 
 	return execStmtAndGetItems(db, stmt)
 }
@@ -267,13 +269,15 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*app.Item, error) {
 	for rows.Next() {
 		var it app.Item
 		var dead, deleted int
+		var source string
 		var description, by, encryptedURL, encryptedDiscussLink sql.NullString
 		err := rows.Scan(&it.ID, &it.Title,
 			&it.URL, &deleted,
 			&dead, &it.DiscussLink,
 			&it.Added, &it.Domain,
-			&description, &by,
-			&encryptedURL, &encryptedDiscussLink,
+			&description, &source,
+			&by, &encryptedURL,
+			&encryptedDiscussLink,
 		)
 		if err != nil {
 			log.Println(err)
@@ -337,8 +341,8 @@ func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 
 // InsertOrReplaceItems inserts or replaces given items
 func InsertOrReplaceItems(db *sql.DB, items []*app.Item) error {
-	// id, title, url, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink
-	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?)"
+	// id, title, url, deleted, dead, discussLink, added, domain, description, source, by, encLink, encDiscussLink
+	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, source, by, encLink, encDiscussLink) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?, ?)"
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -362,7 +366,7 @@ func InsertOrReplaceItems(db *sql.DB, items []*app.Item) error {
 			dead = 1
 		}
 
-		_, err := stmt.Exec(it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.ID, now, it.Domain, it.Description, it.By, it.EncryptedURL, it.EncryptedDiscussLink)
+		_, err := stmt.Exec(it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.ID, now, it.Domain, it.Description, it.Source, it.By, it.EncryptedURL, it.EncryptedDiscussLink)
 		if err != nil {
 			return err
 		}

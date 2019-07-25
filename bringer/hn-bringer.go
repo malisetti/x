@@ -34,6 +34,11 @@ func (b *HNBringer) GetDiscussLink(id interface{}) string {
 	return fmt.Sprintf(hn.PostLinkURL, id)
 }
 
+// GetSource tells source identifier of items
+func (b *HNBringer) GetSource() string {
+	return "HN"
+}
+
 // Bring hn news
 func (b *HNBringer) Bring() ([]*app.Item, error) {
 	itemsCh := make(chan *app.Item)

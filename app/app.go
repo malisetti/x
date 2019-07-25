@@ -11,4 +11,5 @@ type Bringer interface {
 	Fetch([]int) ([]*Item, error)
 	GetURL(interface{}) string
 	GetDiscussLink(interface{}) string
+	GetSource() string
 }
