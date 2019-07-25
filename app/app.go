@@ -8,9 +8,7 @@ type PeriodicBringer interface {
 // Bringer brings a list of things from other portals
 type Bringer interface {
 	Bring() ([]*Item, error)
-}
-
-// Maintainer maintains items and storage
-type Maintainer interface {
-	Maintain()
+	Fetch([]int) ([]*Item, error)
+	GetURL(interface{}) string
+	GetDiscussLink(interface{}) string
 }

@@ -29,8 +29,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/mseshachalam/x/app"
+	"github.com/mseshachalam/x/bringer"
 	"github.com/mseshachalam/x/dbp"
-	"github.com/mseshachalam/x/hn"
+	"github.com/mseshachalam/x/maintainer"
 	"github.com/mseshachalam/x/server"
 )
 
@@ -110,12 +111,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	hnMaintainer := &hn.Maintainer{
+	hnMaintainer := &maintainer.Maintainer{
 		Ctx:    ctx,
 		Config: conf,
-		PediodicBringer: &hn.PeriodicBringer{
-			Ctx:      ctx,
-			Interval: 5 * time.Minute,
+		PeriodicBringers: []app.PeriodicBringer{
+			&bringer.PeriodicBringer{
+				Ctx:      ctx,
+				Interval: 5 * time.Minute,
+			},
 		},
 		Storage: db,
 		Key:     &key,

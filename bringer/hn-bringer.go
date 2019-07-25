@@ -1,12 +1,14 @@
-package hn
+package bringer
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/mseshachalam/x/app"
+	"github.com/mseshachalam/x/hn"
 	"github.com/mseshachalam/x/util"
 )
 
@@ -17,10 +19,25 @@ type Bringer struct {
 	NWorkers      int
 }
 
+// Fetch fetches items by ids
+func (b *Bringer) Fetch(ids []int) ([]*app.Item, error) {
+	return hn.FetchHNStoriesOf(b.Ctx, ids)
+}
+
+// GetURL makes an url for the given id
+func (b *Bringer) GetURL(id interface{}) string {
+	return fmt.Sprintf(hn.PostLinkURL, id)
+}
+
+// GetDiscussLink makes a discuss url for the given id
+func (b *Bringer) GetDiscussLink(id interface{}) string {
+	return fmt.Sprintf(hn.PostLinkURL, id)
+}
+
 // Bring hn news
 func (b *Bringer) Bring() ([]*app.Item, error) {
 	itemsCh := make(chan *app.Item)
-	ids, err := FetchIds(b.Ctx, b.NumberOfItems)
+	ids, err := hn.FetchIds(b.Ctx, b.NumberOfItems)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +51,7 @@ func (b *Bringer) Bring() ([]*app.Item, error) {
 				if b.Ctx.Err() != nil {
 					break
 				}
-				item, err := FetchItem(b.Ctx, id)
+				item, err := hn.FetchItem(b.Ctx, id)
 				if err != nil {
 					log.Println(err) // warning
 					continue
