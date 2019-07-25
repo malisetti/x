@@ -102,7 +102,7 @@ func main() {
 		return
 	}
 
-	errs := dbp.UpdateItemsTable(db, dbp.AddByColumn, dbp.AddTextxColumn, dbp.AddDescColumn, dbp.AddEncLink, dbp.AddEncDiscussLink)
+	errs := dbp.UpdateItemsTable(db, dbp.AddByColumn, dbp.AddDescColumn, dbp.AddEncLink, dbp.AddEncDiscussLink)
 	for stmt, err := range errs {
 		log.Printf("%s \"%v\"", stmt, err)
 	}

@@ -6,8 +6,6 @@ type Item struct {
 	ID int `json:"id"`
 	//By is the username of the item's author.
 	By string `json:"by"`
-	//Textx is comment, story or poll text. HTML.
-	Textx string `json:"-"`
 	//Title of the story, poll or job.
 	Title string `json:"title"`
 	//URL of the story.
@@ -29,5 +27,5 @@ type Item struct {
 	EncryptedDiscussLink string `json:"encryptedDiscussLink"`
 
 	//Description of the item.
-	Description string `json:"-"`
+	Description string `json:"description"`
 }

@@ -155,8 +155,6 @@ func (s *Server) FeedHandler() http.HandlerFunc {
 			}
 			if strings.TrimSpace(it.Description) != "" {
 				feedItem.Description = it.Description
-			} else if strings.TrimSpace(it.Textx) != "" {
-				feedItem.Description = it.Textx
 			} else {
 				feedItem.Description = ""
 			}

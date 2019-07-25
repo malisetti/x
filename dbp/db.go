@@ -16,8 +16,6 @@ const (
 	AddDescColumn = "ALTER TABLE items ADD COLUMN `description` TEXT;"
 	// AddByColumn adds by col
 	AddByColumn = "ALTER TABLE items ADD COLUMN `by` TEXT;"
-	// AddTextxColumn adds textx col
-	AddTextxColumn = "ALTER TABLE items ADD COLUMN `textx` TEXT;"
 	// AddEncLink adds encLink col
 	AddEncLink = "ALTER TABLE items ADD COLUMN `encLink` TEXT;"
 	// AddEncDiscussLink adds encDiscussLink col
@@ -187,7 +185,7 @@ func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) 
 
 // SelectItemsAfter selects items that are added after t
 func SelectItemsAfter(db *sql.DB, t int64, order bool) ([]*app.Item, error) {
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink FROM items WHERE added >= %d`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink FROM items WHERE added >= %d`
 	if order {
 		stmt += " ORDER BY id ASC"
 	} else {
@@ -242,7 +240,7 @@ func SelectItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
 
 	return execStmtAndGetItems(db, stmt)
 }
@@ -253,7 +251,7 @@ func SelectItemsByIDsDesc(db *sql.DB, ids []int) ([]*app.Item, error) {
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
+	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id DESC`
 
 	return execStmtAndGetItems(db, stmt)
 }
@@ -269,13 +267,12 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*app.Item, error) {
 	for rows.Next() {
 		var it app.Item
 		var dead, deleted int
-		var description, by, textx, encryptedURL, encryptedDiscussLink sql.NullString
+		var description, by, encryptedURL, encryptedDiscussLink sql.NullString
 		err := rows.Scan(&it.ID, &it.Title,
 			&it.URL, &deleted,
 			&dead, &it.DiscussLink,
 			&it.Added, &it.Domain,
-			&description,
-			&by, &textx,
+			&description, &by,
 			&encryptedURL, &encryptedDiscussLink,
 		)
 		if err != nil {
@@ -340,8 +337,8 @@ func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 
 // InsertOrReplaceItems inserts or replaces given items
 func InsertOrReplaceItems(db *sql.DB, items []*app.Item) error {
-	// id, title, url, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink
-	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?, ?)"
+	// id, title, url, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink
+	sqlStr := "INSERT OR REPLACE INTO items (id, title, link, deleted, dead, discussLink, added, domain, description, by, encLink, encDiscussLink) VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT added FROM items WHERE id = ?), ?), ?, ?, ?, ?, ?)"
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -365,7 +362,7 @@ func InsertOrReplaceItems(db *sql.DB, items []*app.Item) error {
 			dead = 1
 		}
 
-		_, err := stmt.Exec(it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.ID, now, it.Domain, it.Description, it.By, it.Textx, it.EncryptedURL, it.EncryptedDiscussLink)
+		_, err := stmt.Exec(it.ID, it.Title, it.URL, deleted, dead, it.DiscussLink, it.ID, now, it.Domain, it.Description, it.By, it.EncryptedURL, it.EncryptedDiscussLink)
 		if err != nil {
 			return err
 		}
