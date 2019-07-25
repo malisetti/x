@@ -75,7 +75,7 @@ func DeleteOlderItems(db *sql.DB, t int64) error {
 
 // SelectItemsIdsBefore selects items that are added after t, unix timestamp
 func SelectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
-	stmt := `SELECT id FROM items WHERE added >= %d`
+	stmt := `SELECT id FROM items WHERE added <= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	rows, err := db.Query(stmt)
@@ -105,7 +105,7 @@ func SelectItemsIdsBeforeAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error)
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id FROM items WHERE added >= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
+	stmt := `SELECT id FROM items WHERE added <= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
 	stmt = fmt.Sprintf(stmt, t)
 
 	rows, err := db.Query(stmt)
@@ -131,7 +131,7 @@ func SelectItemsIdsBeforeAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error)
 
 // SelectItemsIDsAfter selects items that are added before t
 func SelectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
-	stmt := `SELECT id FROM items WHERE added <= %d`
+	stmt := `SELECT id FROM items WHERE added >= %d`
 	stmt = fmt.Sprintf(stmt, t)
 
 	rows, err := db.Query(stmt)
@@ -161,7 +161,7 @@ func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) 
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id FROM items WHERE added <= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
+	stmt := `SELECT id FROM items WHERE added >= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
 	stmt = fmt.Sprintf(stmt, t)
 
 	rows, err := db.Query(stmt)
@@ -186,16 +186,13 @@ func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) 
 }
 
 // SelectItemsAfter selects items that are added after t
-func SelectItemsAfter(db *sql.DB, t int64) ([]*app.Item, error) {
+func SelectItemsAfter(db *sql.DB, t int64, order bool) ([]*app.Item, error) {
 	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink FROM items WHERE added >= %d`
-	stmt = fmt.Sprintf(stmt, t)
-
-	return execStmtAndGetItems(db, stmt)
-}
-
-// SelectItemsBefore selects items that are added before t
-func SelectItemsBefore(db *sql.DB, t int64) ([]*app.Item, error) {
-	stmt := `SELECT id, title, link, deleted, dead, discussLink, added, domain, description, by, textx, encLink, encDiscussLink FROM items WHERE added <= %d`
+	if order {
+		stmt += " ORDER BY id ASC"
+	} else {
+		stmt += " ORDER BY id DESC"
+	}
 	stmt = fmt.Sprintf(stmt, t)
 
 	return execStmtAndGetItems(db, stmt)
@@ -208,7 +205,6 @@ func SelectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, err
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
 	stmt := `SELECT id, link, discussLink, domain, description, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
-
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
@@ -317,7 +313,6 @@ func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 	}
 
 	sqlStr := `UPDATE items SET added = ? WHERE id IN (` + strings.Join(placeHolder, ",") + `)`
-
 	tx, err := db.Begin()
 	if err != nil {
 		return err

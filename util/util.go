@@ -2,6 +2,7 @@
 package util
 
 import (
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -101,4 +102,10 @@ func MakeHTTPToHTTPSRedirectServer() *http.Server {
 		Handler:      mux,
 	}
 	return srv
+}
+
+// Toss gives true or false
+func Toss() bool {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Int()%2 == 0
 }

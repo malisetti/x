@@ -3,17 +3,13 @@ package hn
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/mseshachalam/x/app"
-	"github.com/mseshachalam/x/dbp"
 	"github.com/mseshachalam/x/util"
 )
 
@@ -65,26 +61,6 @@ func FetchStoriesFrom(ctx context.Context, ids <-chan int) ([]*app.Item, error) 
 	}
 
 	return items, nil
-}
-
-// FetchCurrentItems fetches items from db that are with given ids plus older items from since
-func FetchCurrentItems(db *sql.DB, since time.Time, ids []int) ([]*app.Item, error) {
-	oIds, err := dbp.SelectItemsIdsBefore(db, since.Unix())
-	if err != nil {
-		return nil, err
-	}
-	currentTopPlusEightHrs := append(ids, oIds...)
-
-	var items []*app.Item
-	ra := rand.New(rand.NewSource(time.Now().Unix()))
-	num := ra.Intn(2)
-	if num == 0 {
-		items, err = dbp.SelectItemsByIDsDesc(db, currentTopPlusEightHrs)
-	} else {
-		items, err = dbp.SelectItemsByIDsAsc(db, currentTopPlusEightHrs)
-	}
-
-	return items, err
 }
 
 // FetchIds fetches item ids with top limit

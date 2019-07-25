@@ -14,15 +14,16 @@ import (
 	"github.com/gorilla/feeds"
 	"github.com/gorilla/mux"
 	"github.com/mseshachalam/x/app"
+	"github.com/mseshachalam/x/dbp"
 	"github.com/mseshachalam/x/encrypt"
+	"github.com/mseshachalam/x/util"
 	"github.com/snabb/sitemap"
 )
 
 // Server will have several handlers
 type Server struct {
-	Storage    *sql.DB
-	FetchItems func(since time.Time) ([]*app.Item, error)
-	TStore     *app.TempStore
+	Storage *sql.DB
+	TStore  *app.TempStore
 }
 
 // JSONHandler serves json
@@ -47,7 +48,7 @@ func (s *Server) JSONHandler(enableCors bool) http.HandlerFunc {
 			since = time.Now().Add(-3 * app.EightHrs)
 		}
 
-		items, err := s.FetchItems(since)
+		items, err := dbp.SelectItemsAfter(s.Storage, since.Unix(), util.Toss())
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -74,7 +75,7 @@ func (s *Server) HTMLHandler() http.HandlerFunc {
 			since = time.Now().Add(-3 * app.EightHrs)
 		}
 
-		items, err := s.FetchItems(since)
+		items, err := dbp.SelectItemsAfter(s.Storage, since.Unix(), util.Toss())
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -96,7 +97,7 @@ func (s *Server) HTMLHandler() http.HandlerFunc {
 func (s *Server) SitemapHandler(key *[32]byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		eightHrsBack := time.Now().Add(-app.EightHrs)
-		items, err := s.FetchItems(eightHrsBack)
+		items, err := dbp.SelectItemsAfter(s.Storage, eightHrsBack.Unix(), util.Toss())
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return
@@ -128,7 +129,7 @@ func (s *Server) SitemapHandler(key *[32]byte) http.HandlerFunc {
 func (s *Server) FeedHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		eightHrsBack := time.Now().Add(-app.EightHrs)
-		items, err := s.FetchItems(eightHrsBack)
+		items, err := dbp.SelectItemsAfter(s.Storage, eightHrsBack.Unix(), util.Toss())
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 			return

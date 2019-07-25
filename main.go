@@ -141,17 +141,6 @@ func main() {
 		}
 	}()
 
-	fetchItems := func(since time.Time) ([]*app.Item, error) {
-		var ids []int
-		func() {
-			tstore.RLock()
-			defer tstore.RUnlock()
-			ids = tstore.CurrentTop30ItemIds
-		}()
-
-		return hn.FetchCurrentItems(db, since, ids)
-	}
-
 	r := mux.NewRouter()
 
 	allowedMethods := []string{http.MethodGet}
@@ -162,9 +151,8 @@ func main() {
 	rlMiddleware := stdlib.NewMiddleware(limiter.New(store, rate, limiter.WithTrustForwardHeader(true)))
 
 	handlers := &server.Server{
-		Storage:    db,
-		FetchItems: fetchItems,
-		TStore:     &tstore,
+		Storage: db,
+		TStore:  &tstore,
 	}
 
 	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.JSONHandler(conf.EnableCors)))).Methods(allowedMethods...)
