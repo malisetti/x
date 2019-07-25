@@ -12,30 +12,30 @@ import (
 	"github.com/mseshachalam/x/util"
 )
 
-// Bringer brings news from hn
-type Bringer struct {
+// HNBringer brings news from hn
+type HNBringer struct {
 	NumberOfItems int
 	Ctx           context.Context
 	NWorkers      int
 }
 
 // Fetch fetches items by ids
-func (b *Bringer) Fetch(ids []int) ([]*app.Item, error) {
+func (b *HNBringer) Fetch(ids []int) ([]*app.Item, error) {
 	return hn.FetchHNStoriesOf(b.Ctx, ids)
 }
 
 // GetURL makes an url for the given id
-func (b *Bringer) GetURL(id interface{}) string {
+func (b *HNBringer) GetURL(id interface{}) string {
 	return fmt.Sprintf(hn.PostLinkURL, id)
 }
 
 // GetDiscussLink makes a discuss url for the given id
-func (b *Bringer) GetDiscussLink(id interface{}) string {
+func (b *HNBringer) GetDiscussLink(id interface{}) string {
 	return fmt.Sprintf(hn.PostLinkURL, id)
 }
 
 // Bring hn news
-func (b *Bringer) Bring() ([]*app.Item, error) {
+func (b *HNBringer) Bring() ([]*app.Item, error) {
 	itemsCh := make(chan *app.Item)
 	ids, err := hn.FetchIds(b.Ctx, b.NumberOfItems)
 	if err != nil {
@@ -86,7 +86,7 @@ func (pb *PeriodicBringer) Bring() <-chan app.Bringer {
 	out := make(chan app.Bringer)
 	go func() {
 		defer close(out)
-		b := new(Bringer)
+		b := new(HNBringer)
 		b.NumberOfItems = app.DefaultHNFrontPageArticlesCount
 		b.Ctx = pb.Ctx
 		b.NWorkers = 4

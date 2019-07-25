@@ -21,6 +21,7 @@ type Maintainer struct {
 	PeriodicBringers []app.PeriodicBringer
 	Storage          *sql.DB
 	Key              *[32]byte
+	sync.Mutex
 }
 
 // Maintain takes care of storage and updates to items
@@ -40,11 +41,15 @@ func (m *Maintainer) Maintain() {
 				for _, item := range items {
 					ids = append(ids, item.ID)
 				}
-				// Update items to latest timestamp
-				err = dbp.UpdateItemsAddedTimeToNow(m.Storage, ids)
-				if err != nil {
-					log.Println(err)
-				}
+				func() {
+					m.Lock()
+					defer m.Unlock()
+					// Update items to latest timestamp
+					err = dbp.UpdateItemsAddedTimeToNow(m.Storage, ids)
+					if err != nil {
+						log.Println(err)
+					}
+				}()
 
 				thirtyTwoHrsBack := time.Now().Add(-4 * app.EightHrs)
 				olderItemsIDsNotInTop, err := dbp.SelectItemsIdsBeforeAndNotOf(m.Storage, thirtyTwoHrsBack.Unix(), ids)
@@ -52,10 +57,14 @@ func (m *Maintainer) Maintain() {
 					log.Println(err)
 				}
 
-				err = dbp.DeleteItemsWith(m.Storage, olderItemsIDsNotInTop)
-				if err != nil {
-					log.Println(err)
-				}
+				func() {
+					m.Lock()
+					defer m.Unlock()
+					err = dbp.DeleteItemsWith(m.Storage, olderItemsIDsNotInTop)
+					if err != nil {
+						log.Println(err)
+					}
+				}()
 
 				eightHrsBack := time.Now().Add(-1 * app.EightHrs)
 				olderItemsIDsInTop, err := dbp.SelectItemsIDsAfterAndNotOf(m.Storage, eightHrsBack.Unix(), ids)
@@ -136,10 +145,14 @@ func (m *Maintainer) Maintain() {
 					}
 				}
 
-				err = dbp.InsertOrReplaceItems(m.Storage, items)
-				if err != nil {
-					log.Println(err)
-				}
+				func() {
+					m.Lock()
+					defer m.Unlock()
+					err = dbp.InsertOrReplaceItems(m.Storage, items)
+					if err != nil {
+						log.Println(err)
+					}
+				}()
 			}
 		}(pb)
 	}
