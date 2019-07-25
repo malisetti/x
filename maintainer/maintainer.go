@@ -1,4 +1,4 @@
-// Package maintainer deals with all the bringers
+// Package maintainer deals with all the bringers.
 package maintainer
 
 import (
