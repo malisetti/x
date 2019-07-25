@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/mseshachalam/x/app"
 	"github.com/mseshachalam/x/hn"
@@ -17,6 +16,11 @@ type HNBringer struct {
 	NumberOfItems int
 	Ctx           context.Context
 	NWorkers      int
+}
+
+// SetContext sets context
+func (b *HNBringer) SetContext(ctx context.Context) {
+	b.Ctx = ctx
 }
 
 // Fetch fetches items by ids
@@ -78,36 +82,4 @@ func (b *HNBringer) Bring() ([]*app.Item, error) {
 	}
 
 	return items, nil
-}
-
-// PeriodicBringer implements Periodic Bringer
-type PeriodicBringer struct {
-	Ctx      context.Context
-	Interval time.Duration
-}
-
-// Bring gives a hn bringer periodically
-func (pb *PeriodicBringer) Bring() <-chan app.Bringer {
-	out := make(chan app.Bringer)
-	go func() {
-		defer close(out)
-		b := new(HNBringer)
-		b.NumberOfItems = app.DefaultHNFrontPageArticlesCount
-		b.Ctx = pb.Ctx
-		b.NWorkers = 4
-
-		out <- b
-
-		ticker := time.NewTicker(pb.Interval)
-		for {
-			select {
-			case <-ticker.C:
-				out <- b
-			case <-pb.Ctx.Done():
-				break
-			}
-		}
-	}()
-
-	return out
 }

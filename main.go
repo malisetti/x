@@ -120,6 +120,15 @@ func main() {
 			&bringer.PeriodicBringer{
 				Ctx:      ctx,
 				Interval: 5 * time.Minute,
+				Bringer: &bringer.HNBringer{
+					NumberOfItems: app.DefaultHNFrontPageArticlesCount,
+					NWorkers:      4,
+				},
+			},
+			&bringer.PeriodicBringer{
+				Ctx:      ctx,
+				Interval: 5 * time.Minute,
+				Bringer:  &bringer.RandBringer{},
 			},
 		},
 		Storage: db,
