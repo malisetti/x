@@ -26,7 +26,7 @@ const (
 
 // CreateTablesStmts contains needed sql stmts to setup required tables
 var CreateTablesStmts = []string{
-	"CREATE TABLE IF NOT EXISTS `items` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,`link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT, `source`	TEXT)",
+	"CREATE TABLE IF NOT EXISTS `items` (`xid`	INTEGER PRIMARY KEY AUTOINCREMENT, `id` INTEGER, `link`	TEXT NOT NULL,`added`	INTEGER NOT NULL,`title`	TEXT,`deleted`	INTEGER,`dead`	INTEGER,`discussLink`	TEXT,`domain`	TEXT, `source`	TEXT)",
 }
 
 // SetupTables creates items table
