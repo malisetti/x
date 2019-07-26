@@ -45,14 +45,14 @@ func (m *Maintainer) Maintain() {
 					m.Lock()
 					defer m.Unlock()
 					// Update items to latest timestamp
-					err = dbp.UpdateItemsAddedTimeToNow(m.Storage, ids)
+					err = dbp.UpdateItemsAddedTimeToNow(m.Storage, ids, b.GetSource())
 					if err != nil {
 						log.Println(err)
 					}
 				}()
 
 				thirtyTwoHrsBack := time.Now().Add(-4 * app.EightHrs)
-				olderItemsIDsNotInTop, err := dbp.SelectItemsIdsBeforeAndNotOf(m.Storage, thirtyTwoHrsBack.Unix(), ids)
+				olderItemsIDsNotInTop, err := dbp.SelectItemsIdsBeforeAndNotOf(m.Storage, thirtyTwoHrsBack.Unix(), ids, b.GetSource())
 				if err != nil {
 					log.Println(err)
 				}
@@ -60,14 +60,14 @@ func (m *Maintainer) Maintain() {
 				func() {
 					m.Lock()
 					defer m.Unlock()
-					err = dbp.DeleteItemsWith(m.Storage, olderItemsIDsNotInTop)
+					err = dbp.DeleteItemsWith(m.Storage, olderItemsIDsNotInTop, b.GetSource())
 					if err != nil {
 						log.Println(err)
 					}
 				}()
 
 				eightHrsBack := time.Now().Add(-1 * app.EightHrs)
-				olderItemsIDsInTop, err := dbp.SelectItemsIDsAfterAndNotOf(m.Storage, eightHrsBack.Unix(), ids)
+				olderItemsIDsInTop, err := dbp.SelectItemsIDsAfterAndNotOf(m.Storage, eightHrsBack.Unix(), ids, b.GetSource())
 				if err != nil {
 					log.Println(err)
 				}
@@ -91,7 +91,7 @@ func (m *Maintainer) Maintain() {
 					}
 				}
 
-				existingItems, err := dbp.SelectExistingPropsOfItemsByIDsAsc(m.Storage, ids)
+				existingItems, err := dbp.SelectExistingPropsOfItemsByIDsAsc(m.Storage, ids, b.GetSource())
 				if err != nil {
 					log.Println(err)
 				}

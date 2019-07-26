@@ -20,6 +20,8 @@ const (
 	AddEncLink = "ALTER TABLE items ADD COLUMN `encLink` TEXT;"
 	// AddEncDiscussLink adds encDiscussLink col
 	AddEncDiscussLink = "ALTER TABLE items ADD COLUMN `encDiscussLink` TEXT;"
+	// AddUniqueIndex creates a unique key on id and source
+	AddUniqueIndex = "CREATE UNIQUE INDEX id_source_index ON items (`id`, `source`);"
 )
 
 // CreateTablesStmts contains needed sql stmts to setup required tables
@@ -52,14 +54,15 @@ func UpdateItemsTable(db *sql.DB, stmts ...string) map[string]error {
 }
 
 // DeleteItemsWith deletes items with given ids
-func DeleteItemsWith(db *sql.DB, ids []int) error {
+func DeleteItemsWith(db *sql.DB, ids []int, source string) error {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
 
-	stmt := `DELETE FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `)`
-	_, err := db.Exec(stmt)
+	stmt := `DELETE FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) AND source = ?`
+	stmt = fmt.Sprintf(stmt)
+	_, err := db.Exec(stmt, source)
 	return err
 }
 
@@ -98,15 +101,15 @@ func SelectItemsIdsBefore(db *sql.DB, t int64) ([]int, error) {
 }
 
 // SelectItemsIdsBeforeAndNotOf selects items that are added after t, unix timestamp and not of ids
-func SelectItemsIdsBeforeAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) {
+func SelectItemsIdsBeforeAndNotOf(db *sql.DB, t int64, ids []int, source string) ([]int, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id FROM items WHERE added <= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
+	stmt := `SELECT id FROM items WHERE added <= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `) AND source = ?`
 	stmt = fmt.Sprintf(stmt, t)
 
-	rows, err := db.Query(stmt)
+	rows, err := db.Query(stmt, source)
 	if err != nil {
 		return nil, err
 	}
@@ -154,15 +157,15 @@ func SelectItemsIDsAfter(db *sql.DB, t int64) ([]int, error) {
 }
 
 // SelectItemsIDsAfterAndNotOf selects items that are added before t and not of ids
-func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int) ([]int, error) {
+func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int, source string) ([]int, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id FROM items WHERE added >= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `)`
+	stmt := `SELECT id FROM items WHERE added >= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `) AND source = ?`
 	stmt = fmt.Sprintf(stmt, t)
 
-	rows, err := db.Query(stmt)
+	rows, err := db.Query(stmt, source)
 	if err != nil {
 		return nil, err
 	}
@@ -197,13 +200,13 @@ func SelectItemsAfter(db *sql.DB, t int64, order bool) ([]*app.Item, error) {
 }
 
 // SelectExistingPropsOfItemsByIDsAsc selects items details that are not from hn for given ids
-func SelectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int) ([]*app.Item, error) {
+func SelectExistingPropsOfItemsByIDsAsc(db *sql.DB, ids []int, source string) ([]*app.Item, error) {
 	var idsStr []string
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
-	stmt := `SELECT id, link, discussLink, domain, description, source, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) ORDER BY id ASC`
-	rows, err := db.Query(stmt)
+	stmt := `SELECT id, link, discussLink, domain, description, source, encLink, encDiscussLink FROM items WHERE id IN (` + strings.Join(idsStr, ",") + `) AND source = ? ORDER BY id ASC`
+	rows, err := db.Query(stmt, source)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +305,7 @@ func execStmtAndGetItems(db *sql.DB, stmt string) ([]*app.Item, error) {
 }
 
 // UpdateItemsAddedTimeToNow updates added time for given ids
-func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
+func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int, source string) error {
 	now := time.Now().Unix()
 	var args []interface{}
 	args = append(args, now)
@@ -312,8 +315,9 @@ func UpdateItemsAddedTimeToNow(db *sql.DB, ids []int) error {
 		placeHolder = append(placeHolder, "?")
 		args = append(args, id)
 	}
+	args = append(args, source)
 
-	sqlStr := `UPDATE items SET added = ? WHERE id IN (` + strings.Join(placeHolder, ",") + `)`
+	sqlStr := `UPDATE items SET added = ? WHERE id IN (` + strings.Join(placeHolder, ",") + `) AND source = ?`
 	tx, err := db.Begin()
 	if err != nil {
 		return err

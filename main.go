@@ -104,6 +104,7 @@ func main() {
 	}
 
 	errs := dbp.UpdateItemsTable(db,
+		dbp.AddUniqueIndex,
 		dbp.AddByColumn, dbp.AddDescColumn,
 		dbp.AddEncLink, dbp.AddEncDiscussLink)
 	for stmt, err := range errs {
