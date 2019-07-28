@@ -23,11 +23,6 @@ func (b *HNBringer) SetContext(ctx context.Context) {
 	b.Ctx = ctx
 }
 
-// Fetch fetches items by ids
-func (b *HNBringer) Fetch(ids []int) ([]*app.Item, error) {
-	return hn.FetchHNStoriesOf(b.Ctx, ids)
-}
-
 // GetURL makes an url for the given id
 func (b *HNBringer) GetURL(id interface{}) string {
 	return fmt.Sprintf(hn.PostLinkURL, id)
@@ -44,7 +39,10 @@ func (b *HNBringer) GetSource() string {
 }
 
 // Bring hn news
-func (b *HNBringer) Bring() ([]*app.Item, error) {
+func (b *HNBringer) Bring(ids []int) ([]*app.Item, error) {
+	if len(ids) != 0 {
+		return hn.FetchHNStoriesOf(b.Ctx, ids)
+	}
 	itemsCh := make(chan *app.Item)
 	ids, err := hn.FetchIds(b.Ctx, b.NumberOfItems)
 	if err != nil {

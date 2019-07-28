@@ -10,8 +10,7 @@ type PeriodicBringer interface {
 // Bringer brings a list of things from other portals
 type Bringer interface {
 	SetContext(context.Context)
-	Bring() ([]*Item, error)
-	Fetch([]int) ([]*Item, error)
+	Bring([]int) ([]*Item, error) // accepts empty slices
 	GetURL(interface{}) string
 	GetDiscussLink(interface{}) string
 	GetSource() string

@@ -31,12 +31,7 @@ func (b *RandBringer) SetContext(ctx context.Context) {
 }
 
 // Bring random news
-func (b *RandBringer) Bring() ([]*app.Item, error) {
-	return items, nil
-}
-
-// Fetch fetches items by ids
-func (b *RandBringer) Fetch(ids []int) ([]*app.Item, error) {
+func (b *RandBringer) Bring(ids []int) ([]*app.Item, error) {
 	return items, nil
 }
 

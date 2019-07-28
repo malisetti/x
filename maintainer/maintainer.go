@@ -32,7 +32,7 @@ func (m *Maintainer) Maintain() {
 		go func(pb app.PeriodicBringer) {
 			defer wg.Done()
 			for b := range pb.Bring() {
-				items, err := b.Bring()
+				items, err := b.Bring(nil)
 				if err != nil {
 					log.Println(err)
 				}
@@ -72,7 +72,7 @@ func (m *Maintainer) Maintain() {
 					log.Println(err)
 				}
 
-				updatedItems, err := b.Fetch(olderItemsIDsInTop)
+				updatedItems, err := b.Bring(olderItemsIDsInTop)
 				if err != nil {
 					log.Println(err)
 				}
