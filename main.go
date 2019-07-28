@@ -114,7 +114,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	hnMaintainer := &maintainer.Maintainer{
+	m := &maintainer.Maintainer{
 		Ctx:    ctx,
 		Config: conf,
 		PeriodicBringers: []app.PeriodicBringer{
@@ -131,7 +131,7 @@ func main() {
 		Key:     &key,
 	}
 
-	go hnMaintainer.Maintain()
+	go m.Maintain()
 
 	go func() {
 		eightHrsTicker := time.NewTicker(app.EightHrs)
