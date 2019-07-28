@@ -190,7 +190,6 @@ func main() {
 		WriteTimeout:   2 * time.Second,
 		IdleTimeout:    2 * time.Second,
 		MaxHeaderBytes: (1 << 20) / 10,
-		Handler:        r,
 	}
 
 	if conf.RunHTTPS {
@@ -212,9 +211,9 @@ func main() {
 				err = nil
 			}
 			if err != nil {
-				fmt.Printf("Failed to start https, error: %s\n", err)
+				log.Printf("Failed to start https, error: %s\n", err)
 			} else {
-				fmt.Printf("HTTPS server shutdown gracefully\n")
+				log.Printf("HTTPS server shutdown gracefully\n")
 			}
 		}()
 
