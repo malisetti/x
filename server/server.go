@@ -55,6 +55,7 @@ func (s *Server) JSONHandler(enableCors bool) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%f", (5*time.Minute).Seconds()))
 		err = json.NewEncoder(w).Encode(items)
 		if err != nil {
 			log.Println(err)

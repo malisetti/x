@@ -29,6 +29,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/go-http-utils/etag"
 	"github.com/mseshachalam/x/app"
 	"github.com/mseshachalam/x/bringer"
 	"github.com/mseshachalam/x/dbp"
@@ -154,7 +155,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	allowedMethods := []string{http.MethodGet}
+	allowedMethods := []string{http.MethodHead, http.MethodGet}
 	if conf.EnableCors {
 		allowedMethods = append(allowedMethods, http.MethodOptions)
 	}
@@ -168,22 +169,23 @@ func main() {
 
 	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.JSONHandler(conf.EnableCors)))).Methods(allowedMethods...)
 
-	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.HTMLHandler()))).Methods(http.MethodGet)
+	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.HTMLHandler()))).Methods(http.MethodHead, http.MethodGet)
 
-	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.SitemapHandler(&key)))).Methods(http.MethodGet)
+	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.SitemapHandler(&key)))).Methods(http.MethodHead, http.MethodGet)
 
-	r.Handle("/feed/{type}", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FeedHandler()))).Methods(http.MethodGet)
+	r.Handle("/feed/{type}", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FeedHandler()))).Methods(http.MethodHead, http.MethodGet)
 
-	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(handlers.LinkHandler(&key))))).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/l/{hash}", rlMiddleware.Handler(server.WithRequestHeadersLogging(server.WithBotsAndCrawlersBlocking(handlers.LinkHandler(&key))))).Methods(http.MethodHead, http.MethodGet, http.MethodPost)
 
 	if conf.HaveRobotsTxt {
-		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodGet)
+		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodHead, http.MethodGet)
 	}
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
 
 	withGz := gziphandler.GzipHandler(r)
-	http.Handle("/", apachelog.CombinedLog.Wrap(withGz, os.Stderr))
+	withETag := etag.Handler(withGz, false)
+	http.Handle("/", apachelog.CombinedLog.Wrap(withETag, os.Stderr))
 
 	var wg sync.WaitGroup
 	srv := &http.Server{
