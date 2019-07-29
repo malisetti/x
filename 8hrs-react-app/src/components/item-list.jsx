@@ -4,7 +4,7 @@ import { Card, Elevation, Button } from '@blueprintjs/core'
 import { DISCUSS } from '../constants'
 
 const ListItem = ({ item, index, onPinClick }) => {
-  const WrapperElement = item.deleted ? "del" : item.flagged ? "s": "React.Fragment";
+  const WrapperElement = item.deleted ? "del" : item.dead ? "s": "React.Fragment";
   return (
     <Card
       className='list-item-card'
