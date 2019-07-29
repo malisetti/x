@@ -20,6 +20,7 @@ import (
 
 	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	apachelog "github.com/lestrrat-go/apache-logformat"
 	"github.com/ulule/limiter/v3"
@@ -181,7 +182,8 @@ func main() {
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
 
-	http.Handle("/", apachelog.CombinedLog.Wrap(r, os.Stderr))
+	withGz := gziphandler.GzipHandler(r)
+	http.Handle("/", apachelog.CombinedLog.Wrap(withGz, os.Stderr))
 
 	var wg sync.WaitGroup
 	srv := &http.Server{
