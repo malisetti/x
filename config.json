@@ -5,6 +5,7 @@
     "indexTemplatePath": "/home/seshachalamm/x/index.html",
     "appDatabasePath": "/home/seshachalamm/x/app.db",
     "staticResourcesDirPath": "/home/seshachalamm/x/build/",
+    "blogResourcesDirPath": "/home/seshachalamm/x/blog/",
     "robotsTxtPath": "/home/seshachalamm/x/robots.txt",
     "rateLimit": "115-M",
     "tweetItems": false,

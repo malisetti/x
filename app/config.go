@@ -9,6 +9,7 @@ type Config struct {
 	IndexTemplatePath            string `json:"indexTemplatePath"`
 	AppDatabasePath              string `json:"appDatabasePath"`
 	StaticResourcesDirectoryPath string `json:"staticResourcesDirPath"`
+	BlogResourcesDirectoryPath   string `json:"blogResourcesDirPath"`
 
 	RateLimit          string `json:"rateLimit"`
 	RobotsTextFilePath string `json:"robotsTxtPath"`
