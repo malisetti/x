@@ -1,4 +1,7 @@
-// This application keeps any article that appeared on hacker news (http://news.ycombinator.com/) for eight hours after they left the homepage.
+// This application keeps any article
+// from any source that implements app.Bringer interface
+// for eight hours even after they left the homepage or from top content.
+// Currently works with hacker news (http://news.ycombinator.com/)
 package main
 
 import (
