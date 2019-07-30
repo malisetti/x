@@ -184,6 +184,7 @@ func main() {
 		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodHead, http.MethodGet)
 	}
 
+	r.PathPrefix("/blog").Handler(http.StripPrefix("/blog", http.FileServer(http.Dir(conf.BlogResourcesDirectoryPath))))
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
 
 	withGz := gziphandler.GzipHandler(r)

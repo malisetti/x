@@ -11,7 +11,7 @@
     "tweetItems": false,
     "pingGoogle": false,
     "fetchPreviews": false,
-    "haveRobotsTxt": false,
+    "haveRobotsTxt": true,
     "twitterAccessToken": "",
     "twitterAccessTokenSecret": "",
     "twitterConsumerAPIKey": "",
