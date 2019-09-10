@@ -7,11 +7,11 @@
   <meta name="description" content="8hrs.xyz holds any article for 8, 16 and 24 hours. Also known as Technology News from the past 8hrs.">
   <meta name="keywords" content="Technology,Tech,HN latest,hackernews,news buffer,world news,seshnsesh,Seshachalam Malisetti">
   
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+  <link rel="manifest" href="/static/site.webmanifest">
+  <link rel="stylesheet" href="/static/style.css">
   <link rel="alternate" type="application/rss+xml" title="RSS feed of 8hrs.xyz" href="https://8hrs.xyz/feed/rss">
   <link rel="alternate" type="application/atom+xml" title="Atom feed of 8hrs.xyz" href="https://8hrs.xyz/feed/atom">
   <link rel="alternate" type="application/json" title="JSON feed of 8hrs.xyz" href="https://8hrs.xyz/feed/json">
@@ -31,14 +31,14 @@
   
   <main>
       <ul style="display: inline;">
-        <a href="/classic?t=8">8hrs</a>
-        <a href="/classic?t=16">16hrs</a>
-        <a href="/classic?t=24">24hrs</a>
-        <a href="/" title="click to visit a modern implmentation, requires js.">modern</a>
+        <a href="/?t=8">8hrs</a>
+        <a href="/?t=16">16hrs</a>
+        <a href="/?t=24">24hrs</a>
       </ul>
-      <ol class="list">
+      <button id="show-pins">Show Pins</button>
+      <ol class="items">
           {{ range $item := .items }}
-          <li>
+          <li data-id="{{ $item.ID }}">
             {{ if $item.Deleted }}
               <del>
             {{ else if $item.Dead }}
@@ -65,6 +65,8 @@
   <footer>
     <a class="readable" href="https://twitter.com/seshnsesh" target="_blank">Feedback</a>
   </footer>
+
+  <script type="text/javascript" src="/static/index.js"></script>
 </body>
 
 </html>

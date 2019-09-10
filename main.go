@@ -170,9 +170,9 @@ func main() {
 		TStore:  &tstore,
 	}
 
-	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.JSONHandler(conf.EnableCors)))).Methods(allowedMethods...)
+	r.Handle("/", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.HTMLHandler()))).Methods(http.MethodHead, http.MethodGet)
 
-	r.Handle("/classic", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.HTMLHandler()))).Methods(http.MethodHead, http.MethodGet)
+	r.Handle("/json", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.JSONHandler(conf.EnableCors)))).Methods(allowedMethods...)
 
 	r.Handle("/sitemap.xml", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.SitemapHandler(&key)))).Methods(http.MethodHead, http.MethodGet)
 
@@ -185,10 +185,12 @@ func main() {
 	}
 
 	r.PathPrefix("/blog").Handler(http.StripPrefix("/blog", http.FileServer(http.Dir(conf.BlogResourcesDirectoryPath))))
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))
+
+	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
 
 	withGz := gziphandler.GzipHandler(r)
 	withETag := etag.Handler(withGz, false)
+
 	http.Handle("/", apachelog.CombinedLog.Wrap(withETag, os.Stderr))
 
 	var wg sync.WaitGroup

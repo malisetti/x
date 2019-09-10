@@ -16,7 +16,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/snabb/sitemap v1.0.0
-	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/tebeka/strftime v0.0.0-20140926081919-3f9c7761e312 // indirect
 	github.com/ulule/limiter/v3 v3.1.0
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4
