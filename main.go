@@ -40,7 +40,13 @@ import (
 	"github.com/mseshachalam/x/server"
 )
 
+var version string
+
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "version" {
+		println(version)
+		return
+	}
 	var tstore app.TempStore
 	var conf *app.Config
 	configFilePath := os.Getenv("APP_CONFIG_PATH")
