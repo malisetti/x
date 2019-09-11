@@ -34,7 +34,7 @@ window.onload = function (e) {
                 const fc = div.firstChild
                 const unpin = fc.lastChild
                 unpin.innerHTML = "unpin"
-                const el = (ev) => {
+                const el = function(ev) {
                     // remove it from ls and change the pina to pin
                     const id = fc.getAttribute("data-id")
                     delete items[id]
@@ -67,7 +67,7 @@ window.onload = function (e) {
         } else {
             pina.innerHTML = "pin"
         }
-        el = (ev) => {
+        const el = function(ev) {
             const pos = pItems.indexOf(id)
             const pinned = pos >= 0
             if (pinned) {
