@@ -1,94 +1,113 @@
+"use strict";
+
 function lsTest() {
-    const test = 'test'
-    try {
-        localStorage.setItem(test, test)
-        localStorage.removeItem(test)
-        return true
-    } catch (e) {
-        return false
-    }
+  var test = 'test';
+
+  try {
+    localStorage.setItem(test, test);
+    localStorage.removeItem(test);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
-const pinnedItems = "PINNED_ITEMS"
-const pinnedItemsContent = "PINNED_ITEMS_CONTENT"
+
+var pinnedItems = "PINNED_ITEMS";
+var pinnedItemsContent = "PINNED_ITEMS_CONTENT";
 
 window.onload = function (e) {
-    if (!lsTest()) {
-        return
-    }
-    const showPins = document.getElementById("show-pins")
-    showPins.onclick = () => {
-        const lPinnedItems = localStorage.getItem(pinnedItems)
-        let pItems = JSON.parse(lPinnedItems) || []
-        if (pItems.length === 0) {
-            alert('Nothing is pinned!')
-            return
-        }
-        const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
-        const items = JSON.parse(lPinnedItemsContent) || {}
-        const container = document.querySelector("ol.items")
-        container.innerHTML = ""
-        for (let key in items) {
-            if (items.hasOwnProperty(key)) {
-                const div = document.createElement("div")
-                div.innerHTML = items[key].trim()
-                const fc = div.firstChild
-                const unpin = fc.lastChild
-                unpin.innerHTML = "unpin"
-                const el = function(ev) {
-                    // remove it from ls and change the pina to pin
-                    const id = fc.getAttribute("data-id")
-                    delete items[id]
-                    pItems = pItems.filter(pi => pi !== id)
+  if (!lsTest()) {
+    return;
+  }
 
-                    localStorage.setItem(pinnedItems, JSON.stringify(pItems))
-                    localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
-                    fc.remove()
-                }
-                unpin.addEventListener("click", el)
+  var showPins = document.getElementById("show-pins");
 
-                container.appendChild(div.firstChild)
-            }
-        }
+  showPins.onclick = function () {
+    var lPinnedItems = localStorage.getItem(pinnedItems);
+    var pItems = JSON.parse(lPinnedItems) || [];
+
+    if (pItems.length === 0) {
+      alert('Nothing is pinned!');
+      return;
     }
 
-    const lPinnedItems = localStorage.getItem(pinnedItems)
-    const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
-    let pItems = JSON.parse(lPinnedItems) || []
-    let items = JSON.parse(lPinnedItemsContent) || {}
+    var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
+    var items = JSON.parse(lPinnedItemsContent) || {};
+    var container = document.querySelector("ol.items");
+    container.innerHTML = "";
 
-    document.querySelectorAll('ol.items>li').forEach((item) => {
-        const id = item.getAttribute("data-id")
+    for (var key in items) {
+      if (items.hasOwnProperty(key)) {
+        (function () {
+          var div = document.createElement("div");
+          div.innerHTML = items[key].trim();
+          var fc = div.firstChild;
+          var unpin = fc.lastChild;
+          unpin.innerHTML = "unpin";
 
-        const pina = document.createElement("button")
-        const pos = pItems.indexOf(id)
-        const pinned = pos >= 0
-        if (pinned) {
-            pina.innerHTML = "unpin"
-        } else {
-            pina.innerHTML = "pin"
+          var el = function el(ev) {
+            // remove it from ls and change the pina to pin
+            var id = fc.getAttribute("data-id");
+            delete items[id];
+            pItems = pItems.filter(function (pi) {
+              return pi !== id;
+            });
+            localStorage.setItem(pinnedItems, JSON.stringify(pItems));
+            localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
+            fc.remove();
+          };
+
+          unpin.addEventListener("click", el);
+          container.appendChild(div.firstChild);
+        })();
+      }
+    }
+  };
+
+  var lPinnedItems = localStorage.getItem(pinnedItems);
+  var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
+  var pItems = JSON.parse(lPinnedItems) || [];
+  var items = JSON.parse(lPinnedItemsContent) || {};
+  document.querySelectorAll('ol.items>li').forEach(function (item) {
+    var id = item.getAttribute("data-id");
+    var pina = document.createElement("button");
+    var pos = pItems.indexOf(id);
+    var pinned = pos >= 0;
+
+    if (pinned) {
+      pina.innerHTML = "unpin";
+    } else {
+      pina.innerHTML = "pin";
+    }
+
+    var el = function el(ev) {
+      var pos = pItems.indexOf(id);
+      var pinned = pos >= 0;
+
+      if (pinned) {
+        // remove it from ls and change the pina to pin
+        delete items[id];
+        pItems = pItems.filter(function (pi) {
+          return pi !== id;
+        });
+        pina.innerHTML = "pin";
+      } else {
+        // add to ls and change the pina to unpin
+        // remove it from ls and change the pina to pin
+        items[id] = item.outerHTML;
+
+        if (pos === -1) {
+          pItems.push(id);
         }
-        const el = function(ev) {
-            const pos = pItems.indexOf(id)
-            const pinned = pos >= 0
-            if (pinned) {
-                // remove it from ls and change the pina to pin
-                delete items[id]
-                pItems = pItems.filter(pi => pi !== id)
-                pina.innerHTML = "pin"
-            } else {
-                // add to ls and change the pina to unpin
-                // remove it from ls and change the pina to pin
-                items[id] = item.outerHTML
-                if (pos === -1) {
-                    pItems.push(id)
-                }
-                pina.innerHTML = "unpin"
-            }
 
-            localStorage.setItem(pinnedItems, JSON.stringify(pItems))
-            localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
-        }
-        pina.addEventListener("click", el)
-        item.appendChild(pina)
-    })
-}
+        pina.innerHTML = "unpin";
+      }
+
+      localStorage.setItem(pinnedItems, JSON.stringify(pItems));
+      localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
+    };
+
+    pina.addEventListener("click", el);
+    item.appendChild(pina);
+  });
+};
