@@ -1,9 +1,7 @@
-app.db-journal
 x
+app.db-journal
 app.db
 prod-config.json
-static/js
-static/css
 8hrs-react-app/build
 8hrs-react-app/build.zip
 .vscode
