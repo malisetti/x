@@ -1,6 +1,6 @@
 "use strict";
 
-var lsTest = function lsTest() {
+var lsTest = function () {
   var test = 'test';
 
   try {
@@ -16,7 +16,7 @@ var pinnedItems = "PINNED_ITEMS";
 var pinnedItemsContent = "PINNED_ITEMS_CONTENT";
 var noPinsMsg = "Nothing is pinned!";
 
-window.onload = function (e) {
+window.onload = function () {
   if (!lsTest()) {
     return;
   }
@@ -54,7 +54,7 @@ window.onload = function (e) {
           var unpin = fc.lastChild;
           unpin.innerHTML = "unpin";
 
-          var el = function el(ev) {
+          var el = function () {
             // remove it from ls and change the pina to pin
             var id = fc.getAttribute("data-id");
             delete items[id];
@@ -74,14 +74,11 @@ window.onload = function (e) {
   };
 
   document.getElementById("controls").appendChild(showPins);
-  var lPinnedItems = localStorage.getItem(pinnedItems);
-  var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
-  var pItems = JSON.parse(lPinnedItems) || [];
-  var items = JSON.parse(lPinnedItemsContent) || {};
+  var initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || [];
   document.querySelectorAll('ol.items>li').forEach(function (item) {
     var id = item.getAttribute("data-id");
     var pina = document.createElement("button");
-    var pinned = pItems.includes(id);
+    var pinned = initpItems.includes(id);
 
     if (pinned) {
       pina.innerHTML = "unpin";
@@ -89,11 +86,14 @@ window.onload = function (e) {
       pina.innerHTML = "pin";
     }
 
-    var el = function el(ev) {
+    pina.addEventListener("click", function el() {
+      var lPinnedItems = localStorage.getItem(pinnedItems);
+      var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
+      var pItems = JSON.parse(lPinnedItems) || [];
+      var items = JSON.parse(lPinnedItemsContent) || {};
       var pos = pItems.indexOf(id);
-      var pinned = pos >= 0;
 
-      if (pinned) {
+      if (pos >= 0) {
         // remove it from ls and change the pina to pin
         delete items[id];
         pItems = pItems.filter(function (pi) {
@@ -114,9 +114,7 @@ window.onload = function (e) {
 
       localStorage.setItem(pinnedItems, JSON.stringify(pItems));
       localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
-    };
-
-    pina.addEventListener("click", el);
+    });
     item.appendChild(pina);
   });
 };

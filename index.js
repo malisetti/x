@@ -59,24 +59,26 @@ window.onload = (e) => {
             }
         }
     }
-    
+
     document.getElementById("controls").appendChild(showPins)
 
-    const lPinnedItems = localStorage.getItem(pinnedItems)
-    const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
-    let pItems = JSON.parse(lPinnedItems) || []
-    let items = JSON.parse(lPinnedItemsContent) || {}
+    const initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || []
 
     document.querySelectorAll('ol.items>li').forEach((item) => {
         const id = item.getAttribute("data-id")
         const pina = document.createElement("button")
-        const pinned = pItems.includes(id)
+        const pinned = initpItems.includes(id)
         if (pinned) {
             pina.innerHTML = "unpin"
         } else {
             pina.innerHTML = "pin"
         }
         const el = (ev) => {
+            const lPinnedItems = localStorage.getItem(pinnedItems)
+            const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
+            let pItems = JSON.parse(lPinnedItems) || []
+            let items = JSON.parse(lPinnedItemsContent) || {}
+
             const pos = pItems.indexOf(id)
             const pinned = pos >= 0
             if (pinned) {
