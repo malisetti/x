@@ -30,7 +30,7 @@ window.onload = (e) => {
         }
         const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
         const items = JSON.parse(lPinnedItemsContent) || {}
-        if (!(Object.keys(item).length > 0)) {
+        if (!(Object.keys(items).length > 0)) {
             alert(noPinsMsg)
             return
         }
