@@ -30,12 +30,13 @@
   </header>
   
   <main>
-      <ul style="display: inline;">
-        <a href="/?t=8">8hrs</a>
-        <a href="/?t=16">16hrs</a>
-        <a href="/?t=24">24hrs</a>
-      </ul>
-      <button id="show-pins">Show Pins</button>
+    <div id="controls">
+        <ul style="display: inline;">
+          <a href="/?t=8">8hrs</a>
+          <a href="/?t=16">16hrs</a>
+          <a href="/?t=24">24hrs</a>
+        </ul>
+    </div>
       <ol class="items">
           {{ range $item := .items }}
           <li data-id="{{ $item.ID }}">

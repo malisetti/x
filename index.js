@@ -1,4 +1,6 @@
-function lsTest() {
+"use strict";
+
+const lsTest = () => {
     const test = 'test'
     try {
         localStorage.setItem(test, test)
@@ -10,21 +12,28 @@ function lsTest() {
 }
 const pinnedItems = "PINNED_ITEMS"
 const pinnedItemsContent = "PINNED_ITEMS_CONTENT"
+const noPinsMsg = "Nothing is pinned!"
 
-window.onload = function (e) {
+window.onload = (e) => {
     if (!lsTest()) {
         return
     }
-    const showPins = document.getElementById("show-pins")
+    const showPins = document.createElement("button");
+    showPins.setAttribute("id", "show-pins")
+    showPins.innerText = "Show Pins"
     showPins.onclick = () => {
         const lPinnedItems = localStorage.getItem(pinnedItems)
         let pItems = JSON.parse(lPinnedItems) || []
-        if (pItems.length === 0) {
-            alert('Nothing is pinned!')
+        if (!(pItems.length > 0)) {
+            alert(noPinsMsg)
             return
         }
         const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
         const items = JSON.parse(lPinnedItemsContent) || {}
+        if (!(Object.keys(item).length > 0)) {
+            alert(noPinsMsg)
+            return
+        }
         const container = document.querySelector("ol.items")
         container.innerHTML = ""
         for (let key in items) {
@@ -34,7 +43,7 @@ window.onload = function (e) {
                 const fc = div.firstChild
                 const unpin = fc.lastChild
                 unpin.innerHTML = "unpin"
-                const el = function(ev) {
+                const el = (ev) => {
                     // remove it from ls and change the pina to pin
                     const id = fc.getAttribute("data-id")
                     delete items[id]
@@ -50,6 +59,8 @@ window.onload = function (e) {
             }
         }
     }
+    
+    document.getElementById("controls").appendChild(showPins)
 
     const lPinnedItems = localStorage.getItem(pinnedItems)
     const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
@@ -58,16 +69,14 @@ window.onload = function (e) {
 
     document.querySelectorAll('ol.items>li').forEach((item) => {
         const id = item.getAttribute("data-id")
-
         const pina = document.createElement("button")
-        const pos = pItems.indexOf(id)
-        const pinned = pos >= 0
+        const pinned = pItems.includes(id)
         if (pinned) {
             pina.innerHTML = "unpin"
         } else {
             pina.innerHTML = "pin"
         }
-        const el = function(ev) {
+        const el = (ev) => {
             const pos = pItems.indexOf(id)
             const pinned = pos >= 0
             if (pinned) {

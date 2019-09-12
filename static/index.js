@@ -1,6 +1,6 @@
 "use strict";
 
-function lsTest() {
+var lsTest = function lsTest() {
   var test = 'test';
 
   try {
@@ -10,29 +10,38 @@ function lsTest() {
   } catch (e) {
     return false;
   }
-}
+};
 
 var pinnedItems = "PINNED_ITEMS";
 var pinnedItemsContent = "PINNED_ITEMS_CONTENT";
+var noPinsMsg = "Nothing is pinned!";
 
 window.onload = function (e) {
   if (!lsTest()) {
     return;
   }
 
-  var showPins = document.getElementById("show-pins");
+  var showPins = document.createElement("button");
+  showPins.setAttribute("id", "show-pins");
+  showPins.innerText = "Show Pins";
 
   showPins.onclick = function () {
     var lPinnedItems = localStorage.getItem(pinnedItems);
     var pItems = JSON.parse(lPinnedItems) || [];
 
-    if (pItems.length === 0) {
-      alert('Nothing is pinned!');
+    if (!(pItems.length > 0)) {
+      alert(noPinsMsg);
       return;
     }
 
     var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
     var items = JSON.parse(lPinnedItemsContent) || {};
+
+    if (!(Object.keys(item).length > 0)) {
+      alert(noPinsMsg);
+      return;
+    }
+
     var container = document.querySelector("ol.items");
     container.innerHTML = "";
 
@@ -64,6 +73,7 @@ window.onload = function (e) {
     }
   };
 
+  document.getElementById("controls").appendChild(showPins);
   var lPinnedItems = localStorage.getItem(pinnedItems);
   var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
   var pItems = JSON.parse(lPinnedItems) || [];
@@ -71,8 +81,7 @@ window.onload = function (e) {
   document.querySelectorAll('ol.items>li').forEach(function (item) {
     var id = item.getAttribute("data-id");
     var pina = document.createElement("button");
-    var pos = pItems.indexOf(id);
-    var pinned = pos >= 0;
+    var pinned = pItems.includes(id);
 
     if (pinned) {
       pina.innerHTML = "unpin";
