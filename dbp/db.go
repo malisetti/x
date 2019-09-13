@@ -162,6 +162,7 @@ func SelectItemsIDsAfterAndNotOf(db *sql.DB, t int64, ids []int, source string) 
 	for _, id := range ids {
 		idsStr = append(idsStr, fmt.Sprintf("%d", id))
 	}
+	idsStr = append(idsStr, fmt.Sprintf("%d", 0))
 	stmt := `SELECT id FROM items WHERE added >= %d AND id NOT IN (` + strings.Join(idsStr, ",") + `) AND source = ?`
 	stmt = fmt.Sprintf(stmt, t)
 

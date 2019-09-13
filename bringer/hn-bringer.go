@@ -59,7 +59,7 @@ func (b *HNBringer) Bring(ids []int) ([]*app.Item, error) {
 					break
 				}
 				item, err := hn.FetchItem(b.Ctx, id)
-				if err != nil {
+				if err != nil || item == nil || item.ID == 0 {
 					log.Println(err) // warning
 					continue
 				}
