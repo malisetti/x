@@ -1,5 +1,13 @@
 "use strict";
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 var lsTest = function () {
   var test = 'test';
 
@@ -74,6 +82,27 @@ window.onload = function () {
   };
 
   document.getElementById("controls").appendChild(showPins);
+  var reverseList = document.createElement("button");
+  reverseList.setAttribute("id", "reverse-list");
+  reverseList.innerText = "Reverse";
+
+  reverseList.onclick = function () {
+    var items = _toConsumableArray(document.querySelectorAll('ol.items>li'));
+
+    var j = items.length;
+
+    for (var i = 0; i < j; i++) {
+      var startItem = items[i];
+      var tstartItem = startItem.cloneNode(true);
+      var endItem = items[j - 1];
+      var tendItem = endItem.cloneNode(true);
+      endItem.replaceWith(tstartItem);
+      startItem.replaceWith(tendItem);
+      j--;
+    }
+  };
+
+  document.getElementById("controls").appendChild(reverseList);
   var initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || [];
   document.querySelectorAll('ol.items>li').forEach(function (item) {
     var id = item.getAttribute("data-id");

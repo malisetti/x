@@ -62,6 +62,25 @@ window.onload = (e) => {
 
     document.getElementById("controls").appendChild(showPins)
 
+    const reverseList = document.createElement("button")
+    reverseList.setAttribute("id", "reverse-list")
+    reverseList.innerText = "Reverse"
+    reverseList.onclick = () => {
+        const items = [...document.querySelectorAll('ol.items>li')]
+        let j = items.length
+        for (let i = 0; i < j; i++) {
+            const startItem = items[i]
+            const tstartItem = startItem.cloneNode(true)
+            const endItem = items[j-1]
+            const tendItem = endItem.cloneNode(true)
+            endItem.replaceWith(tstartItem)
+            startItem.replaceWith(tendItem)
+            j--
+        }
+    }
+
+    document.getElementById("controls").appendChild(reverseList)
+
     const initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || []
 
     document.querySelectorAll('ol.items>li').forEach((item) => {
