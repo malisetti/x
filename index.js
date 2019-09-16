@@ -18,6 +18,50 @@ window.onload = (e) => {
     if (!lsTest()) {
         return
     }
+
+    const initPinListeners = (addPin) => {
+        const initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || []
+
+        document.querySelectorAll('ol.items>li').forEach((item) => {
+            const id = item.getAttribute("data-id")
+            let pina = addPin ? document.createElement("button") : item.lastChild
+            const pinned = initpItems.includes(id)
+            if (pinned) {
+                pina.innerHTML = "unpin"
+            } else {
+                pina.innerHTML = "pin"
+            }
+            const el = (ev) => {
+                const lPinnedItems = localStorage.getItem(pinnedItems)
+                const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
+                let pItems = JSON.parse(lPinnedItems) || []
+                let items = JSON.parse(lPinnedItemsContent) || {}
+
+                const pos = pItems.indexOf(id)
+                const pinned = pos >= 0
+                if (pinned) {
+                    // remove it from ls and change the pina to pin
+                    delete items[id]
+                    pItems = pItems.filter(pi => pi !== id)
+                    pina.innerHTML = "pin"
+                } else {
+                    // add to ls and change the pina to unpin
+                    // remove it from ls and change the pina to pin
+                    items[id] = item.outerHTML
+                    if (pos === -1) {
+                        pItems.push(id)
+                    }
+                    pina.innerHTML = "unpin"
+                }
+
+                localStorage.setItem(pinnedItems, JSON.stringify(pItems))
+                localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
+            }
+            pina.addEventListener("click", el)
+            item.appendChild(pina)
+        })
+    }
+
     const showPins = document.createElement("button");
     showPins.setAttribute("id", "show-pins")
     showPins.innerText = "Show Pins"
@@ -71,54 +115,17 @@ window.onload = (e) => {
         for (let i = 0; i < j; i++) {
             const startItem = items[i]
             const tstartItem = startItem.cloneNode(true)
-            const endItem = items[j-1]
+            const endItem = items[j - 1]
             const tendItem = endItem.cloneNode(true)
             endItem.replaceWith(tstartItem)
             startItem.replaceWith(tendItem)
             j--
         }
+
+        initPinListeners(false)
     }
 
     document.getElementById("controls").appendChild(reverseList)
 
-    const initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || []
-
-    document.querySelectorAll('ol.items>li').forEach((item) => {
-        const id = item.getAttribute("data-id")
-        const pina = document.createElement("button")
-        const pinned = initpItems.includes(id)
-        if (pinned) {
-            pina.innerHTML = "unpin"
-        } else {
-            pina.innerHTML = "pin"
-        }
-        const el = (ev) => {
-            const lPinnedItems = localStorage.getItem(pinnedItems)
-            const lPinnedItemsContent = localStorage.getItem(pinnedItemsContent)
-            let pItems = JSON.parse(lPinnedItems) || []
-            let items = JSON.parse(lPinnedItemsContent) || {}
-
-            const pos = pItems.indexOf(id)
-            const pinned = pos >= 0
-            if (pinned) {
-                // remove it from ls and change the pina to pin
-                delete items[id]
-                pItems = pItems.filter(pi => pi !== id)
-                pina.innerHTML = "pin"
-            } else {
-                // add to ls and change the pina to unpin
-                // remove it from ls and change the pina to pin
-                items[id] = item.outerHTML
-                if (pos === -1) {
-                    pItems.push(id)
-                }
-                pina.innerHTML = "unpin"
-            }
-
-            localStorage.setItem(pinnedItems, JSON.stringify(pItems))
-            localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
-        }
-        pina.addEventListener("click", el)
-        item.appendChild(pina)
-    })
+    initPinListeners(true)
 }

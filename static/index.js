@@ -29,6 +29,52 @@ window.onload = function () {
     return;
   }
 
+  var initPinListeners = function (addPin) {
+    var initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || [];
+    document.querySelectorAll('ol.items>li').forEach(function (item) {
+      var id = item.getAttribute("data-id");
+      var pina = addPin ? document.createElement("button") : item.lastChild;
+      var pinned = initpItems.includes(id);
+
+      if (pinned) {
+        pina.innerHTML = "unpin";
+      } else {
+        pina.innerHTML = "pin";
+      }
+
+      pina.addEventListener("click", function el() {
+        var lPinnedItems = localStorage.getItem(pinnedItems);
+        var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
+        var pItems = JSON.parse(lPinnedItems) || [];
+        var items = JSON.parse(lPinnedItemsContent) || {};
+        var pos = pItems.indexOf(id);
+
+        if (pos >= 0) {
+          // remove it from ls and change the pina to pin
+          delete items[id];
+          pItems = pItems.filter(function (pi) {
+            return pi !== id;
+          });
+          pina.innerHTML = "pin";
+        } else {
+          // add to ls and change the pina to unpin
+          // remove it from ls and change the pina to pin
+          items[id] = item.outerHTML;
+
+          if (pos === -1) {
+            pItems.push(id);
+          }
+
+          pina.innerHTML = "unpin";
+        }
+
+        localStorage.setItem(pinnedItems, JSON.stringify(pItems));
+        localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
+      });
+      item.appendChild(pina);
+    });
+  };
+
   var showPins = document.createElement("button");
   showPins.setAttribute("id", "show-pins");
   showPins.innerText = "Show Pins";
@@ -100,50 +146,10 @@ window.onload = function () {
       startItem.replaceWith(tendItem);
       j--;
     }
+
+    initPinListeners(false);
   };
 
   document.getElementById("controls").appendChild(reverseList);
-  var initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || [];
-  document.querySelectorAll('ol.items>li').forEach(function (item) {
-    var id = item.getAttribute("data-id");
-    var pina = document.createElement("button");
-    var pinned = initpItems.includes(id);
-
-    if (pinned) {
-      pina.innerHTML = "unpin";
-    } else {
-      pina.innerHTML = "pin";
-    }
-
-    pina.addEventListener("click", function el() {
-      var lPinnedItems = localStorage.getItem(pinnedItems);
-      var lPinnedItemsContent = localStorage.getItem(pinnedItemsContent);
-      var pItems = JSON.parse(lPinnedItems) || [];
-      var items = JSON.parse(lPinnedItemsContent) || {};
-      var pos = pItems.indexOf(id);
-
-      if (pos >= 0) {
-        // remove it from ls and change the pina to pin
-        delete items[id];
-        pItems = pItems.filter(function (pi) {
-          return pi !== id;
-        });
-        pina.innerHTML = "pin";
-      } else {
-        // add to ls and change the pina to unpin
-        // remove it from ls and change the pina to pin
-        items[id] = item.outerHTML;
-
-        if (pos === -1) {
-          pItems.push(id);
-        }
-
-        pina.innerHTML = "unpin";
-      }
-
-      localStorage.setItem(pinnedItems, JSON.stringify(pItems));
-      localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
-    });
-    item.appendChild(pina);
-  });
+  initPinListeners(true);
 };
