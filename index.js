@@ -19,6 +19,10 @@ window.onload = (e) => {
         return
     }
 
+    const state = {
+        showpins: false
+    }
+
     const initPinListeners = (addPin) => {
         const initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || []
 
@@ -43,6 +47,11 @@ window.onload = (e) => {
                     // remove it from ls and change the pina to pin
                     delete items[id]
                     pItems = pItems.filter(pi => pi !== id)
+                    if (state.showpins) {
+                        localStorage.setItem(pinnedItems, JSON.stringify(pItems))
+                        localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
+                        item.remove()
+                    }
                     pina.innerHTML = "pin"
                 } else {
                     // add to ls and change the pina to unpin
@@ -66,6 +75,7 @@ window.onload = (e) => {
     showPins.setAttribute("id", "show-pins")
     showPins.innerText = "Show Pins"
     showPins.onclick = () => {
+        state.showpins = true
         const lPinnedItems = localStorage.getItem(pinnedItems)
         let pItems = JSON.parse(lPinnedItems) || []
         if (!(pItems.length > 0)) {
@@ -87,21 +97,12 @@ window.onload = (e) => {
                 const fc = div.firstChild
                 const unpin = fc.lastChild
                 unpin.innerHTML = "unpin"
-                const el = (ev) => {
-                    // remove it from ls and change the pina to pin
-                    const id = fc.getAttribute("data-id")
-                    delete items[id]
-                    pItems = pItems.filter(pi => pi !== id)
 
-                    localStorage.setItem(pinnedItems, JSON.stringify(pItems))
-                    localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
-                    fc.remove()
-                }
-                unpin.addEventListener("click", el)
-
-                container.appendChild(div.firstChild)
+                container.appendChild(fc)
             }
         }
+
+        initPinListeners(false)
     }
 
     document.getElementById("controls").appendChild(showPins)

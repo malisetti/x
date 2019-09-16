@@ -29,6 +29,10 @@ window.onload = function () {
     return;
   }
 
+  var state = {
+    showpins: false
+  };
+
   var initPinListeners = function (addPin) {
     var initpItems = JSON.parse(localStorage.getItem(pinnedItems)) || [];
     document.querySelectorAll('ol.items>li').forEach(function (item) {
@@ -55,6 +59,13 @@ window.onload = function () {
           pItems = pItems.filter(function (pi) {
             return pi !== id;
           });
+
+          if (state.showpins) {
+            localStorage.setItem(pinnedItems, JSON.stringify(pItems));
+            localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
+            item.remove();
+          }
+
           pina.innerHTML = "pin";
         } else {
           // add to ls and change the pina to unpin
@@ -80,6 +91,7 @@ window.onload = function () {
   showPins.innerText = "Show Pins";
 
   showPins.onclick = function () {
+    state.showpins = true;
     var lPinnedItems = localStorage.getItem(pinnedItems);
     var pItems = JSON.parse(lPinnedItems) || [];
 
@@ -101,30 +113,16 @@ window.onload = function () {
 
     for (var key in items) {
       if (items.hasOwnProperty(key)) {
-        (function () {
-          var div = document.createElement("div");
-          div.innerHTML = items[key].trim();
-          var fc = div.firstChild;
-          var unpin = fc.lastChild;
-          unpin.innerHTML = "unpin";
-
-          var el = function () {
-            // remove it from ls and change the pina to pin
-            var id = fc.getAttribute("data-id");
-            delete items[id];
-            pItems = pItems.filter(function (pi) {
-              return pi !== id;
-            });
-            localStorage.setItem(pinnedItems, JSON.stringify(pItems));
-            localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
-            fc.remove();
-          };
-
-          unpin.addEventListener("click", el);
-          container.appendChild(div.firstChild);
-        })();
+        var div = document.createElement("div");
+        div.innerHTML = items[key].trim();
+        var fc = div.firstChild;
+        var unpin = fc.lastChild;
+        unpin.innerHTML = "unpin";
+        container.appendChild(fc);
       }
     }
+
+    initPinListeners(false);
   };
 
   document.getElementById("controls").appendChild(showPins);
