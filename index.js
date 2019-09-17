@@ -48,8 +48,6 @@ window.onload = (e) => {
                     delete items[id]
                     pItems = pItems.filter(pi => pi !== id)
                     if (state.showpins) {
-                        localStorage.setItem(pinnedItems, JSON.stringify(pItems))
-                        localStorage.setItem(pinnedItemsContent, JSON.stringify(items))
                         item.remove()
                     }
                     pina.innerHTML = "pin"
