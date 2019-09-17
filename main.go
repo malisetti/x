@@ -190,9 +190,17 @@ func main() {
 		r.Handle("/robots.txt", rlMiddleware.Handler(server.WithRequestHeadersLogging(handlers.FileHandler(conf.RobotsTextFilePath)))).Methods(http.MethodHead, http.MethodGet)
 	}
 
+	cacheStatic := func(h http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			h.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+
 	r.PathPrefix("/blog").Handler(http.StripPrefix("/blog", http.FileServer(http.Dir(conf.BlogResourcesDirectoryPath))))
 
-	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath))))
+	r.PathPrefix("/static").Handler(cacheStatic(http.StripPrefix("/static", http.FileServer(http.Dir(conf.StaticResourcesDirectoryPath)))))
 
 	withGz := gziphandler.GzipHandler(r)
 	withETag := etag.Handler(withGz, false)
