@@ -48,8 +48,6 @@ window.onload = (e) => {
                     delete items[id]
                     pItems = pItems.filter(pi => pi !== id)
                     if (state.showpins) {
-                        localStorage.setItem(pinnedItems, JSON.stringify(pItems));
-                        localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
                         item.remove()
                     }
                     pina.innerHTML = "pin"
@@ -75,7 +73,6 @@ window.onload = (e) => {
     showPins.setAttribute("id", "show-pins")
     showPins.innerText = "Show Pins"
     showPins.onclick = () => {
-        state.showpins = true
         const lPinnedItems = localStorage.getItem(pinnedItems)
         let pItems = JSON.parse(lPinnedItems) || []
         if (!(pItems.length > 0)) {
@@ -88,6 +85,7 @@ window.onload = (e) => {
             alert(noPinsMsg)
             return
         }
+        state.showpins = true
         const container = document.querySelector("ol.items")
         container.innerHTML = ""
         for (let key in items) {

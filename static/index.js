@@ -61,8 +61,6 @@ window.onload = function () {
           });
 
           if (state.showpins) {
-            localStorage.setItem(pinnedItems, JSON.stringify(pItems));
-            localStorage.setItem(pinnedItemsContent, JSON.stringify(items));
             item.remove();
           }
 
@@ -91,7 +89,6 @@ window.onload = function () {
   showPins.innerText = "Show Pins";
 
   showPins.onclick = function () {
-    state.showpins = true;
     var lPinnedItems = localStorage.getItem(pinnedItems);
     var pItems = JSON.parse(lPinnedItems) || [];
 
@@ -108,6 +105,7 @@ window.onload = function () {
       return;
     }
 
+    state.showpins = true;
     var container = document.querySelector("ol.items");
     container.innerHTML = "";
 
